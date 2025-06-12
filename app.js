@@ -271,8 +271,7 @@ generateWiggleBtn.addEventListener('click', async () => {
       quality: 15, // Slightly better quality
       width: maxWidth,
       height: maxHeight,
-      workerScript: 'https://cdn.jsdelivr.net/npm/gif.js/dist/gif.worker.js'
-    });
+      workerScript: 'https://cdn.jsdelivr.net/npm/gif.js.optimized@0.2.0/dist/gif.worker.js'
 
     // 3. Add frames with slight delay between them
     gif.addFrame(tempLeftCanvas, { delay: 150 });
