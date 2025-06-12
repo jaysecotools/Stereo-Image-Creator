@@ -13,7 +13,8 @@
     button { padding: 10px; cursor: pointer; }
     .controls { display: flex; flex-wrap: wrap; gap: 10px; }
     #cameraPreview { display: none; width: 100%; }
-    #photoCaptureBtn { display: none; }
+    #photoCaptureBtn, #cameraSwitchBtn { display: none; }
+    .loading { display: none; color: blue; }
   </style>
 </head>
 <body>
@@ -23,6 +24,7 @@
       <button id="uploadLeft">Upload Left Image</button>
       <button id="uploadRight">Upload Right Image</button>
       <button id="takePhoto">Take Photo (Mobile)</button>
+      <button id="cameraSwitchBtn">Switch Camera (Rear/Front)</button>
       <video id="cameraPreview" autoplay playsinline></video>
       <button id="photoCaptureBtn">Capture Photo</button>
     </div>
@@ -37,12 +39,13 @@
       <button id="generateWiggle">Wiggle GIF</button>
       <button id="saveResult">Save Result</button>
     </div>
+    <div id="loadingGif" class="loading">Generating GIF... (may take 10 seconds)</div>
     <div class="result">
       <canvas id="resultCanvas"></canvas>
     </div>
   </div>
-  <!-- Load GIF.js for wiggle GIFs -->
-  <script src="https://cdn.jsdelivr.net/npm/gif.js/dist/gif.js"></script>
+  <!-- Load GIF.js -->
+  <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
