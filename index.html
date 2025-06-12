@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stereo Image Generator</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    .container { display: flex; flex-direction: column; gap: 20px; }
+    .upload-section { display: flex; gap: 10px; }
+    .canvas-container { display: flex; gap: 20px; }
+    canvas { border: 1px solid #ccc; max-width: 100%; }
+    button { padding: 10px; cursor: pointer; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Stereo Image Generator</h1>
+    <div class="upload-section">
+      <button id="uploadLeft">Upload Left Image</button>
+      <button id="uploadRight">Upload Right Image</button>
+      <button id="takePhoto">Take Photo (Mobile)</button>
+    </div>
+    <div class="canvas-container">
+      <canvas id="leftCanvas"></canvas>
+      <canvas id="rightCanvas"></canvas>
+    </div>
+    <div class="controls">
+      <button id="autoAlign">Auto-Align</button>
+      <button id="generateSideBySide">Side-by-Side</button>
+      <button id="generateAnaglyph">Anaglyph (Red/Cyan)</button>
+      <button id="generateWiggle">Wiggle GIF</button>
+    </div>
+    <div class="result">
+      <canvas id="resultCanvas"></canvas>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
