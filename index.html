@@ -7,11 +7,13 @@
   <style>
     body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
     .container { display: flex; flex-direction: column; gap: 20px; }
-    .upload-section { display: flex; gap: 10px; }
+    .upload-section { display: flex; flex-wrap: wrap; gap: 10px; }
     .canvas-container { display: flex; gap: 20px; }
     canvas { border: 1px solid #ccc; max-width: 100%; }
     button { padding: 10px; cursor: pointer; }
     .controls { display: flex; flex-wrap: wrap; gap: 10px; }
+    #cameraPreview { display: none; width: 100%; }
+    #photoCaptureBtn { display: none; }
   </style>
 </head>
 <body>
@@ -21,6 +23,8 @@
       <button id="uploadLeft">Upload Left Image</button>
       <button id="uploadRight">Upload Right Image</button>
       <button id="takePhoto">Take Photo (Mobile)</button>
+      <video id="cameraPreview" autoplay playsinline></video>
+      <button id="photoCaptureBtn">Capture Photo</button>
     </div>
     <div class="canvas-container">
       <canvas id="leftCanvas"></canvas>
@@ -31,11 +35,14 @@
       <button id="generateSideBySide">Side-by-Side</button>
       <button id="generateAnaglyph">Anaglyph (Red/Cyan)</button>
       <button id="generateWiggle">Wiggle GIF</button>
+      <button id="saveResult">Save Result</button>
     </div>
     <div class="result">
       <canvas id="resultCanvas"></canvas>
     </div>
   </div>
+  <!-- Load GIF.js for wiggle GIFs -->
+  <script src="https://cdn.jsdelivr.net/npm/gif.js/dist/gif.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
