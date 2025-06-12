@@ -2,10 +2,13 @@
 const uploadLeftBtn = document.getElementById('uploadLeft');
 const uploadRightBtn = document.getElementById('uploadRight');
 const takePhotoBtn = document.getElementById('takePhoto');
+const cameraPreview = document.getElementById('cameraPreview');
+const photoCaptureBtn = document.getElementById('photoCaptureBtn');
 const autoAlignBtn = document.getElementById('autoAlign');
 const generateSideBySideBtn = document.getElementById('generateSideBySide');
 const generateAnaglyphBtn = document.getElementById('generateAnaglyph');
 const generateWiggleBtn = document.getElementById('generateWiggle');
+const saveResultBtn = document.getElementById('saveResult');
 
 const leftCanvas = document.getElementById('leftCanvas');
 const rightCanvas = document.getElementById('rightCanvas');
@@ -16,6 +19,7 @@ const rightCtx = rightCanvas.getContext('2d');
 const resultCtx = resultCanvas.getContext('2d');
 
 let leftImage, rightImage;
+let currentCameraSide = 'left'; // Track which side we're capturing
 
 // Upload images
 function handleImageUpload(canvas, ctx, e) {
@@ -49,41 +53,52 @@ uploadRightBtn.addEventListener('click', () => {
   input.click();
 });
 
-// Take photo (mobile)
+// Camera capture
 takePhotoBtn.addEventListener('click', async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    const video = document.createElement('video');
-    video.srcObject = stream;
-    video.play();
+    cameraPreview.srcObject = stream;
+    cameraPreview.style.display = 'block';
+    photoCaptureBtn.style.display = 'block';
+    takePhotoBtn.style.display = 'none';
 
-    // Create a temporary canvas to capture photo
-    const photoCanvas = document.createElement('canvas');
-    const photoCtx = photoCanvas.getContext('2d');
-    photoCanvas.width = 640;
-    photoCanvas.height = 480;
-
-    video.onplaying = () => {
-      photoCtx.drawImage(video, 0, 0, photoCanvas.width, photoCanvas.height);
-      const img = new Image();
-      img.src = photoCanvas.toDataURL('image/png');
-      img.onload = () => {
-        leftCanvas.width = img.width;
-        leftCanvas.height = img.height;
-        leftCtx.drawImage(img, 0, 0);
-        leftImage = img;
-        stream.getTracks().forEach(track => track.stop());
-      };
-    };
+    photoCaptureBtn.textContent = `Capture ${currentCameraSide} Image`;
   } catch (err) {
     alert('Error accessing camera: ' + err.message);
   }
 });
 
-// Auto-align (simplified - manual adjustments would be better)
+photoCaptureBtn.addEventListener('click', () => {
+  const canvas = currentCameraSide === 'left' ? leftCanvas : rightCanvas;
+  const ctx = currentCameraSide === 'left' ? leftCtx : rightCtx;
+  const img = new Image();
+
+  canvas.width = cameraPreview.videoWidth;
+  canvas.height = cameraPreview.videoHeight;
+  ctx.drawImage(cameraPreview, 0, 0, canvas.width, canvas.height);
+
+  if (currentCameraSide === 'left') {
+    leftImage = new Image();
+    leftImage.src = canvas.toDataURL('image/png');
+    currentCameraSide = 'right';
+    photoCaptureBtn.textContent = 'Capture Right Image';
+  } else {
+    rightImage = new Image();
+    rightImage.src = canvas.toDataURL('image/png');
+    cameraPreview.style.display = 'none';
+    photoCaptureBtn.style.display = 'none';
+    takePhotoBtn.style.display = 'block';
+    currentCameraSide = 'left';
+
+    // Stop camera stream
+    const stream = cameraPreview.srcObject;
+    stream.getTracks().forEach(track => track.stop());
+  }
+});
+
+// Auto-align (simplified)
 autoAlignBtn.addEventListener('click', () => {
   if (!leftImage || !rightImage) return alert('Upload both images first!');
-  // Placeholder: Just resize the smaller image to match the larger one
   const maxWidth = Math.max(leftImage.width, rightImage.width);
   const maxHeight = Math.max(leftImage.height, rightImage.height);
 
@@ -109,7 +124,6 @@ generateAnaglyphBtn.addEventListener('click', () => {
   resultCanvas.width = leftCanvas.width;
   resultCanvas.height = leftCanvas.height;
 
-  // Simplified anaglyph: Red channel from left, Green/Blue from right
   const leftData = leftCtx.getImageData(0, 0, leftCanvas.width, leftCanvas.height);
   const rightData = rightCtx.getImageData(0, 0, rightCanvas.width, rightCanvas.height);
   const resultData = resultCtx.createImageData(resultCanvas.width, resultCanvas.height);
@@ -124,7 +138,39 @@ generateAnaglyphBtn.addEventListener('click', () => {
   resultCtx.putImageData(resultData, 0, 0);
 });
 
-// Generate wiggle GIF (placeholder - would use a library like GIF.js)
+// Generate wiggle GIF (using GIF.js)
 generateWiggleBtn.addEventListener('click', () => {
-  alert('Wiggle GIF requires a GIF encoder library. Would you like to add one?');
+  if (!leftImage || !rightImage) return alert('Upload both images first!');
+
+  const gif = new GIF({
+    workers: 2,
+    quality: 10,
+    width: leftCanvas.width,
+    height: leftCanvas.height
+  });
+
+  // Add left and right frames
+  gif.addFrame(leftCanvas, { delay: 200, copy: true });
+  gif.addFrame(rightCanvas, { delay: 200, copy: true });
+
+  gif.on('finished', (blob) => {
+    const gifUrl = URL.createObjectURL(blob);
+    resultCanvas.width = leftCanvas.width;
+    resultCanvas.height = leftCanvas.height;
+    const img = new Image();
+    img.onload = () => resultCtx.drawImage(img, 0, 0);
+    img.src = gifUrl;
+    alert('Wiggle GIF generated! Click "Save Result" to download.');
+  });
+
+  gif.render();
+});
+
+// Save result
+saveResultBtn.addEventListener('click', () => {
+  if (!resultCanvas.width) return alert('Generate a result first!');
+  const link = document.createElement('a');
+  link.download = 'stereo-image.png';
+  link.href = resultCanvas.toDataURL('image/png');
+  link.click();
 });
