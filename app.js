@@ -3,8 +3,9 @@ const uploadLeftBtn = document.getElementById('uploadLeft');
 const uploadRightBtn = document.getElementById('uploadRight');
 const takePhotoBtn = document.getElementById('takePhoto');
 const cameraSwitchBtn = document.getElementById('cameraSwitchBtn');
-const cameraPreview = document.getElementById('cameraPreview');
 const photoCaptureBtn = document.getElementById('photoCaptureBtn');
+const cameraPreview = document.getElementById('cameraPreview');
+const cameraStatus = document.getElementById('cameraStatus');
 const autoAlignBtn = document.getElementById('autoAlign');
 const generateSideBySideBtn = document.getElementById('generateSideBySide');
 const generateAnaglyphBtn = document.getElementById('generateAnaglyph');
@@ -20,10 +21,19 @@ const leftCtx = leftCanvas.getContext('2d');
 const rightCtx = rightCanvas.getContext('2d');
 const resultCtx = resultCanvas.getContext('2d');
 
-let leftImage, rightImage;
+// State variables
+let leftImage = null;
+let rightImage = null;
 let currentCameraSide = 'left';
 let currentStream = null;
 let useFrontCamera = false;
+let isGeneratingGif = false;
+
+// Initialize canvas sizes
+[leftCanvas, rightCanvas, resultCanvas].forEach(canvas => {
+  canvas.width = 300;
+  canvas.height = 200;
+});
 
 // Upload images
 function handleImageUpload(canvas, ctx, e) {
@@ -35,8 +45,12 @@ function handleImageUpload(canvas, ctx, e) {
     canvas.width = img.width;
     canvas.height = img.height;
     ctx.drawImage(img, 0, 0);
-    if (canvas.id === 'leftCanvas') leftImage = img;
-    else rightImage = img;
+    if (canvas.id === 'leftCanvas') {
+      leftImage = img;
+    } else {
+      rightImage = img;
+    }
+    updateUI();
   };
   img.src = URL.createObjectURL(file);
 }
@@ -57,9 +71,10 @@ uploadRightBtn.addEventListener('click', () => {
   input.click();
 });
 
-// Camera capture with front/rear toggle
+// Camera functions
 async function startCamera(facingMode = 'environment') {
   try {
+    // Stop any existing stream
     if (currentStream) {
       currentStream.getTracks().forEach(track => track.stop());
     }
@@ -75,14 +90,16 @@ async function startCamera(facingMode = 'environment') {
     const stream = await navigator.mediaDevices.getUserMedia(constraints);
     cameraPreview.srcObject = stream;
     cameraPreview.style.display = 'block';
-    photoCaptureBtn.style.display = 'block';
-    cameraSwitchBtn.style.display = 'block';
+    photoCaptureBtn.style.display = 'inline-block';
+    cameraSwitchBtn.style.display = 'inline-block';
     takePhotoBtn.style.display = 'none';
     currentStream = stream;
+    cameraStatus.textContent = `Camera active (${useFrontCamera ? 'Front' : 'Rear'})`;
 
-    photoCaptureBtn.textContent = `Capture ${currentCameraSide} Image`;
+    photoCaptureBtn.textContent = `Capture ${currentCameraSide === 'left' ? 'Left' : 'Right'} Image`;
   } catch (err) {
-    alert(`Camera error: ${err.message}`);
+    cameraStatus.textContent = `Camera error: ${err.message}`;
+    console.error('Camera error:', err);
   }
 }
 
@@ -96,6 +113,8 @@ cameraSwitchBtn.addEventListener('click', () => {
 });
 
 photoCaptureBtn.addEventListener('click', () => {
+  if (!currentStream) return;
+  
   const canvas = currentCameraSide === 'left' ? leftCanvas : rightCanvas;
   const ctx = currentCameraSide === 'left' ? leftCtx : rightCtx;
 
@@ -111,22 +130,32 @@ photoCaptureBtn.addEventListener('click', () => {
   } else {
     rightImage = new Image();
     rightImage.src = canvas.toDataURL('image/png');
-    cameraPreview.style.display = 'none';
-    photoCaptureBtn.style.display = 'none';
-    cameraSwitchBtn.style.display = 'none';
-    takePhotoBtn.style.display = 'block';
+    stopCamera();
     currentCameraSide = 'left';
-
-    if (currentStream) {
-      currentStream.getTracks().forEach(track => track.stop());
-      currentStream = null;
-    }
   }
+  
+  updateUI();
 });
 
-// Auto-align
+function stopCamera() {
+  if (currentStream) {
+    currentStream.getTracks().forEach(track => track.stop());
+    currentStream = null;
+  }
+  cameraPreview.style.display = 'none';
+  photoCaptureBtn.style.display = 'none';
+  cameraSwitchBtn.style.display = 'none';
+  takePhotoBtn.style.display = 'inline-block';
+  cameraStatus.textContent = 'Camera not active';
+}
+
+// Image processing
 autoAlignBtn.addEventListener('click', () => {
-  if (!leftImage || !rightImage) return alert('Upload both images first!');
+  if (!leftImage || !rightImage) {
+    alert('Please upload both images first!');
+    return;
+  }
+
   const maxWidth = Math.max(leftImage.width, rightImage.width);
   const maxHeight = Math.max(leftImage.height, rightImage.height);
 
@@ -135,46 +164,41 @@ autoAlignBtn.addEventListener('click', () => {
 
   leftCtx.drawImage(leftImage, 0, 0, maxWidth, maxHeight);
   rightCtx.drawImage(rightImage, 0, 0, maxWidth, maxHeight);
+  
+  // Update image references
+  leftImage = new Image();
+  leftImage.src = leftCanvas.toDataURL();
+  rightImage = new Image();
+  rightImage.src = rightCanvas.toDataURL();
 });
 
-// Generate side-by-side
 generateSideBySideBtn.addEventListener('click', () => {
-  if (!leftImage || !rightImage) return alert('Upload both images first!');
-  resultCanvas.width = leftCanvas.width * 2;
-  resultCanvas.height = leftCanvas.height;
+  if (!leftImage || !rightImage) {
+    alert('Please upload both images first!');
+    return;
+  }
+
+  resultCanvas.width = leftCanvas.width + rightCanvas.width;
+  resultCanvas.height = Math.max(leftCanvas.height, rightCanvas.height);
+  resultCtx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
   resultCtx.drawImage(leftImage, 0, 0);
   resultCtx.drawImage(rightImage, leftCanvas.width, 0);
 });
 
-// Generate anaglyph
 generateAnaglyphBtn.addEventListener('click', () => {
-  if (!leftImage || !rightImage) return alert('Upload both images first!');
-  resultCanvas.width = leftCanvas.width;
-  resultCanvas.height = leftCanvas.height;
-
-  const leftData = leftCtx.getImageData(0, 0, leftCanvas.width, leftCanvas.height);
-  const rightData = rightCtx.getImageData(0, 0, rightCanvas.width, rightCanvas.height);
-  const resultData = resultCtx.createImageData(resultCanvas.width, resultCanvas.height);
-
-  for (let i = 0; i < leftData.data.length; i += 4) {
-    resultData.data[i] = leftData.data[i];       // Red from left
-    resultData.data[i + 1] = rightData.data[i + 1]; // Green from right
-    resultData.data[i + 2] = rightData.data[i + 2]; // Blue from right
-    resultData.data[i + 3] = 255; // Alpha
+  if (!leftImage || !rightImage) {
+    alert('Please upload both images first!');
+    return;
   }
 
-  resultCtx.putImageData(resultData, 0, 0);
-});
-
-// Generate wiggle GIF (fixed)
-generateWiggleBtn.addEventListener('click', async () => {
-  if (!leftImage || !rightImage) return alert('Upload both images first!');
-  loadingGif.style.display = 'block';
-
-  // Resize canvases to match (if needed)
   const maxWidth = Math.max(leftCanvas.width, rightCanvas.width);
   const maxHeight = Math.max(leftCanvas.height, rightCanvas.height);
+  
+  resultCanvas.width = maxWidth;
+  resultCanvas.height = maxHeight;
+  resultCtx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
 
+  // Create temporary canvases for consistent sizing
   const tempLeftCanvas = document.createElement('canvas');
   tempLeftCanvas.width = maxWidth;
   tempLeftCanvas.height = maxHeight;
@@ -187,7 +211,53 @@ generateWiggleBtn.addEventListener('click', async () => {
   const tempRightCtx = tempRightCanvas.getContext('2d');
   tempRightCtx.drawImage(rightImage, 0, 0, maxWidth, maxHeight);
 
-  // Use GIF.js
+  const leftData = tempLeftCtx.getImageData(0, 0, maxWidth, maxHeight);
+  const rightData = tempRightCtx.getImageData(0, 0, maxWidth, maxHeight);
+  const resultData = resultCtx.createImageData(maxWidth, maxHeight);
+
+  for (let i = 0; i < leftData.data.length; i += 4) {
+    resultData.data[i] = leftData.data[i];         // Red from left
+    resultData.data[i + 1] = rightData.data[i + 1]; // Green from right
+    resultData.data[i + 2] = rightData.data[i + 2]; // Blue from right
+    resultData.data[i + 3] = 255;                  // Alpha
+  }
+
+  resultCtx.putImageData(resultData, 0, 0);
+});
+
+generateWiggleBtn.addEventListener('click', () => {
+  if (!leftImage || !rightImage) {
+    alert('Please upload both images first!');
+    return;
+  }
+
+  if (isGeneratingGif) {
+    alert('GIF is already being generated. Please wait.');
+    return;
+  }
+
+  isGeneratingGif = true;
+  loadingGif.style.display = 'block';
+  generateWiggleBtn.disabled = true;
+
+  // Determine maximum dimensions
+  const maxWidth = Math.max(leftCanvas.width, rightCanvas.width);
+  const maxHeight = Math.max(leftCanvas.height, rightCanvas.height);
+
+  // Create temporary canvases for consistent sizing
+  const tempLeftCanvas = document.createElement('canvas');
+  tempLeftCanvas.width = maxWidth;
+  tempLeftCanvas.height = maxHeight;
+  const tempLeftCtx = tempLeftCanvas.getContext('2d');
+  tempLeftCtx.drawImage(leftImage, 0, 0, maxWidth, maxHeight);
+
+  const tempRightCanvas = document.createElement('canvas');
+  tempRightCanvas.width = maxWidth;
+  tempRightCanvas.height = maxHeight;
+  const tempRightCtx = tempRightCanvas.getContext('2d');
+  tempRightCtx.drawImage(rightImage, 0, 0, maxWidth, maxHeight);
+
+  // Initialize GIF.js
   const gif = new GIF({
     workers: 2,
     quality: 10,
@@ -196,30 +266,74 @@ generateWiggleBtn.addEventListener('click', async () => {
     workerScript: 'https://cdn.jsdelivr.net/npm/gif.js/dist/gif.worker.js'
   });
 
+  // Add frames
   gif.addFrame(tempLeftCanvas, { delay: 100 });
   gif.addFrame(tempRightCanvas, { delay: 100 });
 
+  // Render GIF
   gif.on('finished', (blob) => {
     const gifUrl = URL.createObjectURL(blob);
     resultCanvas.width = maxWidth;
     resultCanvas.height = maxHeight;
+    
     const img = new Image();
     img.onload = () => {
       resultCtx.drawImage(img, 0, 0);
       loadingGif.style.display = 'none';
+      generateWiggleBtn.disabled = false;
+      isGeneratingGif = false;
+      
+      // Store the GIF URL for saving
+      resultCanvas.dataset.gifUrl = gifUrl;
     };
     img.src = gifUrl;
+  });
+
+  gif.on('abort', () => {
+    loadingGif.style.display = 'none';
+    generateWiggleBtn.disabled = false;
+    isGeneratingGif = false;
+    alert('GIF generation failed');
   });
 
   gif.render();
 });
 
-// Save result
 saveResultBtn.addEventListener('click', () => {
-  if (!resultCanvas.width) return alert('Generate a result first!');
-  const format = generateWiggleBtn.disabled ? 'png' : 'gif';
+  if (resultCanvas.width === 0 || resultCanvas.height === 0) {
+    alert('No result to save! Generate an image first.');
+    return;
+  }
+
+  let url, filename;
+  
+  if (resultCanvas.dataset.gifUrl) {
+    // Save GIF
+    url = resultCanvas.dataset.gifUrl;
+    filename = 'stereo-image.gif';
+  } else {
+    // Save PNG
+    url = resultCanvas.toDataURL('image/png');
+    filename = 'stereo-image.png';
+  }
+
   const link = document.createElement('a');
-  link.download = `stereo-image.${format}`;
-  link.href = resultCanvas.toDataURL(`image/${format}`);
+  link.download = filename;
+  link.href = url;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
 });
+
+// Helper function to update UI state
+function updateUI() {
+  const hasBothImages = leftImage && rightImage;
+  autoAlignBtn.disabled = !hasBothImages;
+  generateSideBySideBtn.disabled = !hasBothImages;
+  generateAnaglyphBtn.disabled = !hasBothImages;
+  generateWiggleBtn.disabled = !hasBothImages;
+  saveResultBtn.disabled = resultCanvas.width === 0;
+}
+
+// Initialize
+updateUI();
