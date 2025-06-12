@@ -183,6 +183,9 @@ generateSideBySideBtn.addEventListener('click', () => {
   resultCtx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
   resultCtx.drawImage(leftImage, 0, 0);
   resultCtx.drawImage(rightImage, leftCanvas.width, 0);
+  
+  // Clear any previous GIF data
+  delete resultCanvas.dataset.gifUrl;
 });
 
 generateAnaglyphBtn.addEventListener('click', () => {
@@ -223,16 +226,20 @@ generateAnaglyphBtn.addEventListener('click', () => {
   }
 
   resultCtx.putImageData(resultData, 0, 0);
+  
+  // Clear any previous GIF data
+  delete resultCanvas.dataset.gifUrl;
 });
 
-generateWiggleBtn.addEventListener('click', () => {
+// Fixed Wiggle GIF Generation
+generateWiggleBtn.addEventListener('click', async () => {
   if (!leftImage || !rightImage) {
     alert('Please upload both images first!');
     return;
   }
 
   if (isGeneratingGif) {
-    alert('GIF is already being generated. Please wait.');
+    alert('Please wait - GIF is already being generated');
     return;
   }
 
@@ -240,63 +247,65 @@ generateWiggleBtn.addEventListener('click', () => {
   loadingGif.style.display = 'block';
   generateWiggleBtn.disabled = true;
 
-  // Determine maximum dimensions
-  const maxWidth = Math.max(leftCanvas.width, rightCanvas.width);
-  const maxHeight = Math.max(leftCanvas.height, rightCanvas.height);
+  try {
+    // 1. Prepare images with consistent sizing
+    const maxWidth = Math.max(leftImage.width, rightImage.width);
+    const maxHeight = Math.max(leftImage.height, rightImage.height);
 
-  // Create temporary canvases for consistent sizing
-  const tempLeftCanvas = document.createElement('canvas');
-  tempLeftCanvas.width = maxWidth;
-  tempLeftCanvas.height = maxHeight;
-  const tempLeftCtx = tempLeftCanvas.getContext('2d');
-  tempLeftCtx.drawImage(leftImage, 0, 0, maxWidth, maxHeight);
+    // Create temporary canvases
+    const tempLeftCanvas = document.createElement('canvas');
+    tempLeftCanvas.width = maxWidth;
+    tempLeftCanvas.height = maxHeight;
+    const tempLeftCtx = tempLeftCanvas.getContext('2d');
+    tempLeftCtx.drawImage(leftImage, 0, 0, maxWidth, maxHeight);
 
-  const tempRightCanvas = document.createElement('canvas');
-  tempRightCanvas.width = maxWidth;
-  tempRightCanvas.height = maxHeight;
-  const tempRightCtx = tempRightCanvas.getContext('2d');
-  tempRightCtx.drawImage(rightImage, 0, 0, maxWidth, maxHeight);
+    const tempRightCanvas = document.createElement('canvas');
+    tempRightCanvas.width = maxWidth;
+    tempRightCanvas.height = maxHeight;
+    const tempRightCtx = tempRightCanvas.getContext('2d');
+    tempRightCtx.drawImage(rightImage, 0, 0, maxWidth, maxHeight);
 
-  // Initialize GIF.js
-  const gif = new GIF({
-    workers: 2,
-    quality: 10,
-    width: maxWidth,
-    height: maxHeight,
-    workerScript: 'https://cdn.jsdelivr.net/npm/gif.js/dist/gif.worker.js'
-  });
+    // 2. Initialize GIF.js with explicit worker path
+    const gif = new GIF({
+      workers: 2,
+      quality: 15, // Slightly better quality
+      width: maxWidth,
+      height: maxHeight,
+      workerScript: 'https://cdn.jsdelivr.net/npm/gif.js/dist/gif.worker.js'
+    });
 
-  // Add frames
-  gif.addFrame(tempLeftCanvas, { delay: 100 });
-  gif.addFrame(tempRightCanvas, { delay: 100 });
+    // 3. Add frames with slight delay between them
+    gif.addFrame(tempLeftCanvas, { delay: 150 });
+    gif.addFrame(tempRightCanvas, { delay: 150 });
 
-  // Render GIF
-  gif.on('finished', (blob) => {
-    const gifUrl = URL.createObjectURL(blob);
+    // 4. Render the GIF
+    const gifBlob = await new Promise((resolve, reject) => {
+      gif.on('finished', blob => resolve(blob));
+      gif.on('abort', () => reject(new Error('GIF generation aborted')));
+      gif.render();
+    });
+
+    // 5. Display the result
+    const gifUrl = URL.createObjectURL(gifBlob);
     resultCanvas.width = maxWidth;
     resultCanvas.height = maxHeight;
     
     const img = new Image();
     img.onload = () => {
+      resultCtx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
       resultCtx.drawImage(img, 0, 0);
-      loadingGif.style.display = 'none';
-      generateWiggleBtn.disabled = false;
-      isGeneratingGif = false;
-      
-      // Store the GIF URL for saving
-      resultCanvas.dataset.gifUrl = gifUrl;
+      resultCanvas.dataset.gifUrl = gifUrl; // Store for saving
     };
     img.src = gifUrl;
-  });
 
-  gif.on('abort', () => {
+  } catch (error) {
+    console.error('GIF generation failed:', error);
+    alert(`Failed to generate GIF: ${error.message}`);
+  } finally {
     loadingGif.style.display = 'none';
     generateWiggleBtn.disabled = false;
     isGeneratingGif = false;
-    alert('GIF generation failed');
-  });
-
-  gif.render();
+  }
 });
 
 saveResultBtn.addEventListener('click', () => {
@@ -331,7 +340,7 @@ function updateUI() {
   autoAlignBtn.disabled = !hasBothImages;
   generateSideBySideBtn.disabled = !hasBothImages;
   generateAnaglyphBtn.disabled = !hasBothImages;
-  generateWiggleBtn.disabled = !hasBothImages;
+  generateWiggleBtn.disabled = !hasBothImages || isGeneratingGif;
   saveResultBtn.disabled = resultCanvas.width === 0;
 }
 
