@@ -329,15 +329,30 @@
   display: flex;
   gap: 8px;
   margin-top: 12px;
-  width: 100%; /* Ensure it takes full width */
+  width: 100%;
 }
 
 .history-btn {
   padding: 8px 12px;
   font-size: 13px;
   min-width: auto;
-  flex: 1; /* This makes both buttons equal width */
-  text-align: center; /* Center the text and icons */
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Optional: Make more compact on mobile */
+@media (max-width: 480px) {
+  .history-btn {
+    padding: 8px;
+  }
+  
+  .history-btn .btn-icon {
+    width: 16px;
+    height: 16px;
+  }
 }
 
     .tutorial-overlay {
