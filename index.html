@@ -325,17 +325,20 @@
       to { transform: rotate(360deg); }
     }
 
-    .history-controls {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
+.history-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  width: 100%; /* Ensure it takes full width */
+}
 
-    .history-btn {
-      padding: 8px 12px;
-      font-size: 13px;
-      min-width: auto;
-    }
+.history-btn {
+  padding: 8px 12px;
+  font-size: 13px;
+  min-width: auto;
+  flex: 1; /* This makes both buttons equal width */
+  text-align: center; /* Center the text and icons */
+}
 
     .tutorial-overlay {
       position: fixed;
