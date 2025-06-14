@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#4361ee">
-  <meta name="description" content="Create stereo 3D images including side-by-side and red-cyan anaglyph formats">
+  <meta name="description" content="Create stereo 3D images including side-by-side, cross-eye, and red-cyan anaglyph formats">
   <title>Stereo Image Generator</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -445,6 +445,16 @@
       margin-bottom: 8px;
     }
 
+    .cross-eye-instructions {
+      display: none;
+      background-color: #f0f9ff;
+      border-left: 4px solid #3b82f6;
+      padding: 12px;
+      margin-top: 12px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
     @media (max-width: 768px) {
       body {
         padding: 16px;
@@ -520,7 +530,7 @@
   <div class="app-container">
     <header>
       <h1>Stereo Image Generator</h1>
-      <p class="subtitle">Create side-by-side stereo images or red-cyan anaglyph 3D images from your photos</p>
+      <p class="subtitle">Create side-by-side, cross-eye, or red-cyan anaglyph 3D images from your photos</p>
     </header>
     
     <div class="card">
@@ -534,7 +544,7 @@
       <h2 class="section-title">
         <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
         </svg>
         Image Sources
       </h2>
@@ -690,6 +700,12 @@
           </svg>
           Side-by-Side
         </button>
+        <button id="generateCrossEye" class="btn" disabled>
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+          </svg>
+          Cross-Eye 3D
+        </button>
         <button id="generateAnaglyph" class="btn" disabled>
           <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -703,6 +719,16 @@
           </svg>
           Save Result
         </button>
+      </div>
+      
+      <div class="cross-eye-instructions" id="crossEyeInstructions">
+        <strong>How to view Cross-Eye 3D:</strong>
+        <ol>
+          <li>Position the image about 30cm (12 inches) from your eyes</li>
+          <li>Cross your eyes slightly until you see three images</li>
+          <li>Focus on the middle image which should appear in 3D</li>
+          <li>Relax your eyes if you feel strain</li>
+        </ol>
       </div>
       
       <div class="history-controls">
@@ -746,9 +772,10 @@
     <div class="tutorial-content">
       <div class="tutorial-step active" id="step1">
         <h3>Welcome to Stereo Image Generator</h3>
-        <p>This tool helps you create 3D stereo images in two formats:</p>
+        <p>This tool helps you create 3D stereo images in three formats:</p>
         <ul>
-          <li><strong>Side-by-Side:</strong> Two images placed next to each other for cross-eye or parallel viewing</li>
+          <li><strong>Side-by-Side:</strong> Two images placed next to each other for parallel viewing</li>
+          <li><strong>Cross-Eye:</strong> Images swapped for cross-eye 3D viewing</li>
           <li><strong>Anaglyph:</strong> Red/Cyan 3D images viewable with classic 3D glasses</li>
         </ul>
       </div>
@@ -829,6 +856,7 @@
           cameraStatus: document.getElementById('cameraStatus'),
           autoAlignBtn: document.getElementById('autoAlign'),
           generateSideBySideBtn: document.getElementById('generateSideBySide'),
+          generateCrossEyeBtn: document.getElementById('generateCrossEye'),
           generateAnaglyphBtn: document.getElementById('generateAnaglyph'),
           saveResultBtn: document.getElementById('saveResult'),
           outputQualitySelect: document.getElementById('outputQuality'),
@@ -853,7 +881,8 @@
           tutorialOverlay: document.getElementById('tutorialOverlay'),
           prevStep: document.getElementById('prevStep'),
           nextStep: document.getElementById('nextStep'),
-          closeTutorial: document.getElementById('closeTutorial')
+          closeTutorial: document.getElementById('closeTutorial'),
+          crossEyeInstructions: document.getElementById('crossEyeInstructions')
         };
 
         // Canvas contexts
@@ -878,7 +907,8 @@
           history: [],
           historyIndex: -1,
           currentOrientation: window.matchMedia("(orientation: portrait)").matches ? 'portrait' : 'landscape',
-          tutorialStep: 1
+          tutorialStep: 1,
+          currentMode: null // 'side-by-side', 'cross-eye', 'anaglyph'
         };
 
         // Initialize
@@ -903,24 +933,51 @@
 
         // Processing buttons
         this.elements.autoAlignBtn.addEventListener('click', () => this.autoAlignImages());
-        this.elements.generateSideBySideBtn.addEventListener('click', () => this.generateSideBySide());
-        this.elements.generateAnaglyphBtn.addEventListener('click', () => this.generateAnaglyph());
+        this.elements.generateSideBySideBtn.addEventListener('click', () => {
+          this.state.currentMode = 'side-by-side';
+          this.generateSideBySide();
+          this.elements.crossEyeInstructions.style.display = 'none';
+        });
+        this.elements.generateCrossEyeBtn.addEventListener('click', () => {
+          this.state.currentMode = 'cross-eye';
+          this.generateCrossEye();
+          this.elements.crossEyeInstructions.style.display = 'block';
+        });
+        this.elements.generateAnaglyphBtn.addEventListener('click', () => {
+          this.state.currentMode = 'anaglyph';
+          this.generateAnaglyph();
+          this.elements.crossEyeInstructions.style.display = 'none';
+        });
         this.elements.saveResultBtn.addEventListener('click', () => this.saveResult());
 
         // Controls
         this.elements.horizontalOffset.addEventListener('input', (e) => {
           this.elements.offsetValue.textContent = e.target.value;
-          this.generateAnaglyph();
+          if (this.state.currentMode === 'anaglyph') {
+            this.generateAnaglyph();
+          } else if (this.state.currentMode === 'cross-eye') {
+            this.generateCrossEye();
+          } else if (this.state.currentMode === 'side-by-side') {
+            this.generateSideBySide();
+          }
         });
         
         this.elements.verticalOffset.addEventListener('input', (e) => {
           this.elements.verticalOffsetValue.textContent = e.target.value;
-          this.generateAnaglyph();
+          if (this.state.currentMode === 'anaglyph') {
+            this.generateAnaglyph();
+          } else if (this.state.currentMode === 'cross-eye') {
+            this.generateCrossEye();
+          } else if (this.state.currentMode === 'side-by-side') {
+            this.generateSideBySide();
+          }
         });
         
         this.elements.convergence.addEventListener('input', (e) => {
           this.elements.convergenceValue.textContent = e.target.value;
-          this.generateAnaglyph();
+          if (this.state.currentMode === 'anaglyph') {
+            this.generateAnaglyph();
+          }
         });
 
         // History controls
@@ -941,6 +998,7 @@
         this.elements.prevStep.addEventListener('click', () => this.prevTutorialStep());
         this.elements.nextStep.addEventListener('click', () => this.nextTutorialStep());
         this.elements.closeTutorial.addEventListener('click', () => this.closeTutorial());
+        this.elements.crossEyeInstructions.style.display = 'none';
 
         // Window events
         window.addEventListener('resize', () => this.handleWindowResize());
@@ -1395,6 +1453,70 @@
         }, 100);
       }
 
+      // Generate cross-eye 3D image
+      generateCrossEye() {
+        if (!this.state.leftImage || !this.state.rightImage) {
+          this.showError('Please upload both images first!');
+          return;
+        }
+
+        this.showProcessing(true);
+        
+        setTimeout(() => {
+          try {
+            this.elements.resultCanvas.style.setProperty('--result-aspect-ratio', '4/3');
+
+            let outputWidth = this.state.leftImage.width + this.state.rightImage.width;
+            let outputHeight = Math.max(this.state.leftImage.height, this.state.rightImage.height);
+            
+            const sizeOption = this.elements.outputSizeSelect.value;
+            if (sizeOption !== 'original') {
+              const targetHeight = sizeOption === '1080p' ? 1080 : 720;
+              const scale = targetHeight / outputHeight;
+              outputWidth = Math.round(outputWidth * scale);
+              outputHeight = targetHeight;
+            }
+
+            this.elements.resultCanvas.width = outputWidth;
+            this.elements.resultCanvas.height = outputHeight;
+            
+            this.contexts.resultCtx.clearRect(0, 0, this.elements.resultCanvas.width, this.elements.resultCanvas.height);
+            this.contexts.resultCtx.imageSmoothingEnabled = true;
+            
+            const hOffset = parseInt(this.elements.horizontalOffset.value);
+            const vOffset = parseInt(this.elements.verticalOffset.value);
+            
+            // For cross-eye, we swap left and right images
+            const rightScale = outputHeight / this.state.rightImage.height;
+            const rightWidth = this.state.rightImage.width * rightScale;
+            this.contexts.resultCtx.drawImage(
+              this.state.rightImage,
+              0 + hOffset, 0 + vOffset,
+              rightWidth, outputHeight
+            );
+            
+            const leftScale = outputHeight / this.state.leftImage.height;
+            const leftWidth = this.state.leftImage.width * leftScale;
+            this.contexts.resultCtx.drawImage(
+              this.state.leftImage,
+              rightWidth + hOffset, 0 + vOffset,
+              leftWidth, outputHeight
+            );
+            
+            this.state.resultCanvasData = this.getCanvasDataUrl(this.elements.resultCanvas);
+            
+            this.saveToHistory();
+            this.updateUI();
+            this.showProcessing(false);
+            this.showSuccess('Cross-eye 3D image generated');
+          } catch (err) {
+            console.error('Cross-eye generation error:', err);
+            this.showProcessing(false);
+            this.showError('Failed to generate cross-eye image');
+          }
+        }, 100);
+      }
+
       // Generate anaglyph image
       generateAnaglyph() {
         if (!this.state.leftImage || !this.state.rightImage) {
@@ -1511,7 +1633,17 @@
         }
 
         const link = document.createElement('a');
-        link.download = 'stereo-image.' + (this.elements.outputQualitySelect.value === '1.0' ? 'png' : 'jpg');
+        let fileName = 'stereo-image';
+        
+        if (this.state.currentMode === 'side-by-side') {
+          fileName = 'side-by-side';
+        } else if (this.state.currentMode === 'cross-eye') {
+          fileName = 'cross-eye-3d';
+        } else if (this.state.currentMode === 'anaglyph') {
+          fileName = 'anaglyph-3d';
+        }
+        
+        link.download = fileName + '.' + (this.elements.outputQualitySelect.value === '1.0' ? 'png' : 'jpg');
         link.href = this.state.resultCanvasData || this.getCanvasDataUrl(this.elements.resultCanvas);
         document.body.appendChild(link);
         link.click();
@@ -1525,6 +1657,7 @@
         const hasBothImages = this.state.leftImage && this.state.rightImage;
         this.elements.autoAlignBtn.disabled = !hasBothImages;
         this.elements.generateSideBySideBtn.disabled = !hasBothImages;
+        this.elements.generateCrossEyeBtn.disabled = !hasBothImages;
         this.elements.generateAnaglyphBtn.disabled = !hasBothImages;
         this.elements.saveResultBtn.disabled = !this.state.resultCanvasData;
         
@@ -1652,6 +1785,7 @@
         this.state.rightCanvasData = null;
         this.state.resultCanvasData = null;
         this.state.currentCameraSide = 'left';
+        this.state.currentMode = null;
         
         this.contexts.leftCtx.clearRect(0, 0, this.elements.leftCanvas.width, this.elements.leftCanvas.height);
         this.contexts.rightCtx.clearRect(0, 0, this.elements.rightCanvas.width, this.elements.rightCanvas.height);
@@ -1663,6 +1797,7 @@
         this.elements.offsetValue.textContent = '0';
         this.elements.verticalOffsetValue.textContent = '0';
         this.elements.convergenceValue.textContent = '50';
+        this.elements.crossEyeInstructions.style.display = 'none';
         
         this.initCanvases();
         this.saveToHistory();
