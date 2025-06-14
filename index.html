@@ -2,71 +2,1788 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#4361ee">
+  <meta name="description" content="Create stereo 3D images including side-by-side and red-cyan anaglyph formats">
   <title>Stereo Image Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-    .container { display: flex; flex-direction: column; gap: 20px; }
-    .upload-section { display: flex; flex-wrap: wrap; gap: 10px; }
-    .canvas-container { display: flex; gap: 20px; margin-bottom: 20px; }
-    canvas { border: 1px solid #ccc; max-width: 100%; background: #f0f0f0; }
-    button { padding: 10px 15px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; }
-    button:disabled { background: #cccccc; }
-    .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-    #cameraPreview { display: none; width: 100%; max-height: 300px; background: black; }
-    #photoCaptureBtn, #cameraSwitchBtn { display: none; }
-    .loading { display: none; color: #2196F3; margin: 10px 0; }
-    .camera-options { display: flex; gap: 10px; }
-    .status { color: #666; font-style: italic; }
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary: #3f37c9;
+      --text: #2b2d42;
+      --text-light: #8d99ae;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-light: #ffffff;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --transition: all 0.2s ease;
+      --error: #ef233c;
+      --success: #2ec4b6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.5;
+      color: var(--text);
+      background-color: var(--bg);
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+      touch-action: manipulation;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: var(--text-light);
+      font-size: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background-color: var(--bg-light);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .upload-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      padding: 12px 20px;
+      cursor: pointer;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 500;
+      flex: 1 1 auto;
+      min-width: 140px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: var(--transition);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      background-color: #e2e8f0;
+      color: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background-color: white;
+      color: var(--primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background-color: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    .btn-icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    .canvas-container {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 10px;
+    }
+
+    .canvas-wrapper {
+      flex: 0 0 calc(50% - 8px);
+      min-width: 0;
+      position: relative;
+    }
+
+    .canvas-label {
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--text);
+      margin-bottom: 5px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    canvas {
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      width: 100%;
+      max-width: 100%;
+      background: #f8f8f8;
+      background-image: linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%),
+                        linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 10px 10px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+      aspect-ratio: 3/4;
+    }
+
+    #cameraPreview {
+      display: none;
+      width: 100%;
+      max-height: 70vh;
+      background: black;
+      margin: 12px 0;
+      border-radius: var(--radius-sm);
+      object-fit: contain;
+    }
+
+    .camera-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .camera-advanced {
+      display: none;
+      flex-wrap: wrap;
+      gap: 12px;
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    .status {
+      color: var(--text-light);
+      font-size: 14px;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .controls-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .quality-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .control-group label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .control-group select, 
+    .control-group input {
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-size: 14px;
+      background-color: white;
+      transition: var(--transition);
+    }
+
+    .control-group select:focus,
+    .control-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+    }
+
+    .slider-container {
+      width: 100%;
+      margin: 12px 0;
+    }
+
+    .slider-container label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .slider-container input[type="range"] {
+      width: 100%;
+    }
+
+    .result-wrapper {
+      width: 100%;
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #resultCanvas {
+      max-width: 100%;
+      width: 100%;
+      height: auto;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: #f8f8f8;
+      aspect-ratio: var(--result-aspect-ratio);
+    }
+
+    .loading {
+      display: none;
+      color: var(--primary);
+      margin: 12px 0;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(67, 97, 238, 0.3);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .history-controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .history-btn {
+      padding: 8px 12px;
+      font-size: 13px;
+      min-width: auto;
+    }
+
+    .tutorial-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tutorial-content {
+      background-color: white;
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .tutorial-step {
+      display: none;
+    }
+
+    .tutorial-step.active {
+      display: block;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .tutorial-indicators {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin: 16px 0;
+    }
+
+    .tutorial-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--border);
+      cursor: pointer;
+    }
+
+    .tutorial-indicator.active {
+      background-color: var(--primary);
+    }
+
+    .error-message {
+      color: var(--error);
+      font-size: 14px;
+      text-align: center;
+      margin: 8px 0;
+      display: none;
+    }
+
+    .success-message {
+      color: var(--success);
+      font-size: 14px;
+      text-align: center;
+      margin: 8px 0;
+      display: none;
+    }
+
+    .reset-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .reset-btn:hover {
+      color: var(--primary);
+    }
+
+    .advanced-controls {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .advanced-toggle {
+      background: none;
+      border: none;
+      color: var(--primary);
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 16px;
+      }
+      
+      .card {
+        padding: 20px;
+      }
+      
+      .btn {
+        padding: 12px 16px;
+        font-size: 14px;
+      }
+      
+      .canvas-wrapper {
+        flex: 0 0 calc(50% - 8px);
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 24px;
+      }
+      
+      .subtitle {
+        font-size: 14px;
+      }
+      
+      .card {
+        padding: 16px;
+      }
+      
+      .section-title {
+        font-size: 16px;
+      }
+      
+      .btn {
+        min-width: 100%;
+      }
+      
+      .quality-controls {
+        flex-direction: column;
+        gap: 12px;
+      }
+      
+      .control-group {
+        width: 100%;
+      }
+      
+      .control-group select {
+        width: 100%;
+      }
+      
+      .camera-options {
+        flex-direction: column;
+      }
+      
+      .camera-options .btn {
+        width: 100%;
+      }
+      
+      .canvas-container {
+        gap: 8px;
+      }
+      
+      .canvas-wrapper {
+        flex: 0 0 calc(50% - 4px);
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Stereo Image Generator</h1>
+  <div class="app-container">
+    <header>
+      <h1>Stereo Image Generator</h1>
+      <p class="subtitle">Create side-by-side stereo images or red-cyan anaglyph 3D images from your photos</p>
+    </header>
     
-    <div class="upload-section">
-      <button id="uploadLeft">Upload Left Image</button>
-      <button id="uploadRight">Upload Right Image</button>
-      <button id="takePhoto">Take Photo</button>
+    <div class="card">
+      <button id="resetBtn" class="reset-btn">
+        <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        Reset All
+      </button>
+      
+      <h2 class="section-title">
+        <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+        Image Sources
+      </h2>
+      
+      <div class="upload-section">
+        <button id="uploadLeft" class="btn">
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+          Upload Left
+        </button>
+        <button id="uploadRight" class="btn">
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+          Upload Right
+        </button>
+        <button id="takePhoto" class="btn btn-secondary">
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+          Take Photo
+        </button>
+        <button id="helpBtn" class="btn btn-secondary">
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Help
+        </button>
+      </div>
       
       <div class="camera-options">
-        <button id="cameraSwitchBtn">Switch Camera</button>
-        <button id="photoCaptureBtn">Capture Photo</button>
+        <button id="cameraSwitchBtn" class="btn btn-secondary">
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+          </svg>
+          Switch Camera
+        </button>
+        <button id="photoCaptureBtn" class="btn">
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+          Capture Left
+        </button>
       </div>
+      
+      <div class="camera-advanced">
+        <button id="flashToggle" class="btn btn-secondary">
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+          </svg>
+          Flash: Off
+        </button>
+        <div class="control-group">
+          <label for="zoomControl">Zoom:</label>
+          <input type="range" id="zoomControl" min="1" max="4" step="0.1" value="1">
+        </div>
+      </div>
+      
+      <button id="toggleAdvanced" class="advanced-toggle">
+        <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+        Advanced Camera Controls
+      </button>
       
       <video id="cameraPreview" autoplay playsinline></video>
       <p id="cameraStatus" class="status">Camera not active</p>
-    </div>
-    
-    <div class="canvas-container">
-      <div>
-        <p>Left Image</p>
-        <canvas id="leftCanvas"></canvas>
+      
+      <div class="quality-controls">
+        <div class="control-group">
+          <label for="outputQuality">Output Quality:</label>
+          <select id="outputQuality">
+            <option value="1.0">Maximum (PNG)</option>
+            <option value="0.9">High (WebP)</option>
+            <option value="0.8">Good (JPEG)</option>
+            <option value="0.6">Medium (JPEG)</option>
+          </select>
+        </div>
+        
+        <div class="control-group">
+          <label for="outputSize">Output Size:</label>
+          <select id="outputSize">
+            <option value="original">Original</option>
+            <option value="1080p">1080p</option>
+            <option value="720p">720p</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
       </div>
-      <div>
-        <p>Right Image</p>
-        <canvas id="rightCanvas"></canvas>
+      
+      <div class="canvas-container">
+        <div class="canvas-wrapper">
+          <p class="canvas-label">
+            <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            </svg>
+            Left Image
+          </p>
+          <canvas id="leftCanvas"></canvas>
+        </div>
+        <div class="canvas-wrapper">
+          <p class="canvas-label">
+            <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            </svg>
+            Right Image
+          </p>
+          <canvas id="rightCanvas"></canvas>
+        </div>
+      </div>
+      
+      <div class="advanced-controls">
+        <div class="slider-container">
+          <label for="horizontalOffset">Horizontal Offset: <span id="offsetValue">0</span>px</label>
+          <input type="range" id="horizontalOffset" min="-100" max="100" value="0" step="1">
+        </div>
+        
+        <div class="slider-container">
+          <label for="verticalOffset">Vertical Offset: <span id="verticalOffsetValue">0</span>px</label>
+          <input type="range" id="verticalOffset" min="-100" max="100" value="0" step="1">
+        </div>
+        
+        <div class="slider-container">
+          <label for="convergence">Convergence Point: <span id="convergenceValue">50</span>%</label>
+          <input type="range" id="convergence" min="0" max="100" value="50" step="1">
+        </div>
       </div>
     </div>
     
-    <div class="controls">
-      <button id="autoAlign">Auto-Align Images</button>
-      <button id="generateSideBySide">Side-by-Side</button>
-      <button id="generateAnaglyph">Anaglyph (Red/Cyan)</button>
-      <button id="generateWiggle">Generate Wiggle GIF</button>
-      <button id="saveResult">Save Result</button>
-    </div>
-    
-    <div id="loadingGif" class="loading">Generating GIF... Please wait (this may take 10-20 seconds)</div>
-    
-    <div class="result">
-      <h3>Result:</h3>
-      <canvas id="resultCanvas"></canvas>
+    <div class="card">
+      <h2 class="section-title">
+        <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+        </svg>
+        Processing
+      </h2>
+      
+      <div class="controls-section">
+        <button id="autoAlign" class="btn btn-secondary" disabled>
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+          </svg>
+          Auto-Align
+        </button>
+        <button id="generateSideBySide" class="btn" disabled>
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
+          </svg>
+          Side-by-Side
+        </button>
+        <button id="generateAnaglyph" class="btn" disabled>
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+          </svg>
+          Red/Cyan 3D
+        </button>
+        <button id="saveResult" class="btn" disabled>
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          Save Result
+        </button>
+      </div>
+      
+      <div class="history-controls">
+        <button id="undoBtn" class="btn btn-secondary history-btn" disabled>
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+          Undo
+        </button>
+        <button id="redoBtn" class="btn btn-secondary history-btn" disabled>
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+          </svg>
+          Redo
+        </button>
+      </div>
+      
+      <div class="loading" id="processingIndicator">
+        <span class="loading-spinner"></span>
+        Processing...
+      </div>
+      
+      <div class="error-message" id="errorMessage"></div>
+      <div class="success-message" id="successMessage"></div>
+      
+      <div class="result-wrapper">
+        <h2 class="section-title">
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+          </svg>
+          Result
+        </h2>
+        <canvas id="resultCanvas"></canvas>
+      </div>
     </div>
   </div>
 
-  <!-- GIF.js Library -->
-  <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
-  <script src="app.js"></script>
+  <!-- Tutorial Overlay -->
+  <div class="tutorial-overlay" id="tutorialOverlay">
+    <div class="tutorial-content">
+      <div class="tutorial-step active" id="step1">
+        <h3>Welcome to Stereo Image Generator</h3>
+        <p>This tool helps you create 3D stereo images in two formats:</p>
+        <ul>
+          <li><strong>Side-by-Side:</strong> Two images placed next to each other for cross-eye or parallel viewing</li>
+          <li><strong>Anaglyph:</strong> Red/Cyan 3D images viewable with classic 3D glasses</li>
+        </ul>
+      </div>
+      
+      <div class="tutorial-step" id="step2">
+        <h3>Getting Started</h3>
+        <p>You can add images in two ways:</p>
+        <ol>
+          <li><strong>Upload:</strong> Select existing images from your device</li>
+          <li><strong>Camera:</strong> Take photos directly using your device's camera</li>
+        </ol>
+        <p>You'll need two images - one for the left eye and one for the right eye.</p>
+      </div>
+      
+      <div class="tutorial-step" id="step3">
+        <h3>Camera Tips</h3>
+        <p>For best results when using the camera:</p>
+        <ul>
+          <li>Hold your device steady</li>
+          <li>Move horizontally between shots (about 2-3 inches for close subjects)</li>
+          <li>Keep the same vertical position</li>
+          <li>Use the advanced controls to adjust zoom and flash</li>
+        </ul>
+      </div>
+      
+      <div class="tutorial-step" id="step4">
+        <h3>Processing Options</h3>
+        <p>After adding your images:</p>
+        <ul>
+          <li><strong>Auto-Align:</strong> Automatically matches the two images</li>
+          <li><strong>Manual Adjust:</strong> Fine-tune alignment with the offset sliders</li>
+          <li><strong>Convergence:</strong> Adjust the 3D effect depth</li>
+        </ul>
+      </div>
+      
+      <div class="tutorial-step" id="step5">
+        <h3>Saving Your Work</h3>
+        <p>When you're happy with the result:</p>
+        <ol>
+          <li>Choose your preferred output quality</li>
+          <li>Select the desired size</li>
+          <li>Click "Save Result" to download the image</li>
+        </ol>
+        <p>You can undo changes or start over with the reset button.</p>
+      </div>
+      
+      <div class="tutorial-indicators">
+        <div class="tutorial-indicator active" data-step="1"></div>
+        <div class="tutorial-indicator" data-step="2"></div>
+        <div class="tutorial-indicator" data-step="3"></div>
+        <div class="tutorial-indicator" data-step="4"></div>
+        <div class="tutorial-indicator" data-step="5"></div>
+      </div>
+      
+      <div class="tutorial-nav">
+        <button id="prevStep" class="btn btn-secondary" disabled>Previous</button>
+        <button id="nextStep" class="btn">Next</button>
+        <button id="closeTutorial" class="btn" style="display: none;">Get Started</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Main Application Class
+    class StereoImageApp {
+      constructor() {
+        // DOM elements
+        this.elements = {
+          uploadLeftBtn: document.getElementById('uploadLeft'),
+          uploadRightBtn: document.getElementById('uploadRight'),
+          takePhotoBtn: document.getElementById('takePhoto'),
+          helpBtn: document.getElementById('helpBtn'),
+          cameraSwitchBtn: document.getElementById('cameraSwitchBtn'),
+          photoCaptureBtn: document.getElementById('photoCaptureBtn'),
+          flashToggle: document.getElementById('flashToggle'),
+          zoomControl: document.getElementById('zoomControl'),
+          cameraPreview: document.getElementById('cameraPreview'),
+          cameraStatus: document.getElementById('cameraStatus'),
+          autoAlignBtn: document.getElementById('autoAlign'),
+          generateSideBySideBtn: document.getElementById('generateSideBySide'),
+          generateAnaglyphBtn: document.getElementById('generateAnaglyph'),
+          saveResultBtn: document.getElementById('saveResult'),
+          outputQualitySelect: document.getElementById('outputQuality'),
+          outputSizeSelect: document.getElementById('outputSize'),
+          horizontalOffset: document.getElementById('horizontalOffset'),
+          verticalOffset: document.getElementById('verticalOffset'),
+          convergence: document.getElementById('convergence'),
+          offsetValue: document.getElementById('offsetValue'),
+          verticalOffsetValue: document.getElementById('verticalOffsetValue'),
+          convergenceValue: document.getElementById('convergenceValue'),
+          resultCanvas: document.getElementById('resultCanvas'),
+          leftCanvas: document.getElementById('leftCanvas'),
+          rightCanvas: document.getElementById('rightCanvas'),
+          processingIndicator: document.getElementById('processingIndicator'),
+          errorMessage: document.getElementById('errorMessage'),
+          successMessage: document.getElementById('successMessage'),
+          resetBtn: document.getElementById('resetBtn'),
+          undoBtn: document.getElementById('undoBtn'),
+          redoBtn: document.getElementById('redoBtn'),
+          toggleAdvanced: document.getElementById('toggleAdvanced'),
+          cameraAdvanced: document.querySelector('.camera-advanced'),
+          tutorialOverlay: document.getElementById('tutorialOverlay'),
+          prevStep: document.getElementById('prevStep'),
+          nextStep: document.getElementById('nextStep'),
+          closeTutorial: document.getElementById('closeTutorial')
+        };
+
+        // Canvas contexts
+        this.contexts = {
+          leftCtx: this.elements.leftCanvas.getContext('2d', { willReadFrequently: true }),
+          rightCtx: this.elements.rightCanvas.getContext('2d', { willReadFrequently: true }),
+          resultCtx: this.elements.resultCanvas.getContext('2d', { willReadFrequently: true })
+        };
+
+        // State
+        this.state = {
+          leftImage: null,
+          rightImage: null,
+          currentCameraSide: 'left',
+          currentStream: null,
+          useFrontCamera: false,
+          leftCanvasData: null,
+          rightCanvasData: null,
+          resultCanvasData: null,
+          flashOn: false,
+          zoomLevel: 1,
+          history: [],
+          historyIndex: -1,
+          currentOrientation: window.matchMedia("(orientation: portrait)").matches ? 'portrait' : 'landscape',
+          tutorialStep: 1
+        };
+
+        // Initialize
+        this.initEventListeners();
+        this.initCanvases();
+        this.updateUI();
+        this.checkFirstVisit();
+      }
+
+      // Initialize event listeners
+      initEventListeners() {
+        // Upload buttons
+        this.elements.uploadLeftBtn.addEventListener('click', () => this.handleUpload('left'));
+        this.elements.uploadRightBtn.addEventListener('click', () => this.handleUpload('right'));
+
+        // Camera controls
+        this.elements.takePhotoBtn.addEventListener('click', () => this.startCamera(this.state.useFrontCamera ? 'user' : 'environment'));
+        this.elements.cameraSwitchBtn.addEventListener('click', () => this.switchCamera());
+        this.elements.photoCaptureBtn.addEventListener('click', () => this.capturePhoto());
+        this.elements.flashToggle.addEventListener('click', () => this.toggleFlash());
+        this.elements.zoomControl.addEventListener('input', (e) => this.handleZoomChange(e.target.value));
+
+        // Processing buttons
+        this.elements.autoAlignBtn.addEventListener('click', () => this.autoAlignImages());
+        this.elements.generateSideBySideBtn.addEventListener('click', () => this.generateSideBySide());
+        this.elements.generateAnaglyphBtn.addEventListener('click', () => this.generateAnaglyph());
+        this.elements.saveResultBtn.addEventListener('click', () => this.saveResult());
+
+        // Controls
+        this.elements.horizontalOffset.addEventListener('input', (e) => {
+          this.elements.offsetValue.textContent = e.target.value;
+          this.generateAnaglyph();
+        });
+        
+        this.elements.verticalOffset.addEventListener('input', (e) => {
+          this.elements.verticalOffsetValue.textContent = e.target.value;
+          this.generateAnaglyph();
+        });
+        
+        this.elements.convergence.addEventListener('input', (e) => {
+          this.elements.convergenceValue.textContent = e.target.value;
+          this.generateAnaglyph();
+        });
+
+        // History controls
+        this.elements.undoBtn.addEventListener('click', () => this.undo());
+        this.elements.redoBtn.addEventListener('click', () => this.redo());
+        this.elements.resetBtn.addEventListener('click', () => this.resetAll());
+
+        // Advanced controls toggle
+        this.elements.toggleAdvanced.addEventListener('click', () => {
+          this.elements.cameraAdvanced.style.display = this.elements.cameraAdvanced.style.display === 'flex' ? 'none' : 'flex';
+          this.elements.toggleAdvanced.innerHTML = this.elements.cameraAdvanced.style.display === 'flex' ? 
+            '<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg> Advanced Camera Controls' :
+            '<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg> Advanced Camera Controls';
+        });
+
+        // Tutorial controls
+        this.elements.helpBtn.addEventListener('click', () => this.showTutorial());
+        this.elements.prevStep.addEventListener('click', () => this.prevTutorialStep());
+        this.elements.nextStep.addEventListener('click', () => this.nextTutorialStep());
+        this.elements.closeTutorial.addEventListener('click', () => this.closeTutorial());
+
+        // Window events
+        window.addEventListener('resize', () => this.handleWindowResize());
+        document.addEventListener('visibilitychange', () => this.handleVisibilityChange());
+      }
+
+      // Initialize canvases with proper aspect ratio
+      initCanvases() {
+        const portraitHeight = Math.min(window.innerHeight * 0.3, 300);
+        const portraitWidth = portraitHeight * 0.75;
+        
+        if (!this.state.leftImage) {
+          this.elements.leftCanvas.width = portraitWidth;
+          this.elements.leftCanvas.height = portraitHeight;
+        }
+        
+        if (!this.state.rightImage) {
+          this.elements.rightCanvas.width = portraitWidth;
+          this.elements.rightCanvas.height = portraitHeight;
+        }
+        
+        this.elements.resultCanvas.style.setProperty('--result-aspect-ratio', '4/3');
+        
+        if (this.state.leftCanvasData) this.restoreCanvas(this.elements.leftCanvas, this.state.leftCanvasData);
+        if (this.state.rightCanvasData) this.restoreCanvas(this.elements.rightCanvas, this.state.rightCanvasData);
+        if (this.state.resultCanvasData) this.restoreCanvas(this.elements.resultCanvas, this.state.resultCanvasData);
+      }
+
+      // Restore canvas content from data URL
+      restoreCanvas(canvas, dataUrl) {
+        if (!dataUrl) return;
+        
+        const img = new Image();
+        img.onload = () => {
+          const ctx = canvas.getContext('2d');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.imageSmoothingEnabled = true;
+          ctx.drawImage(img, 0, 0);
+          
+          if (canvas.id === 'leftCanvas') {
+            this.state.leftImage = img;
+          } else if (canvas.id === 'rightCanvas') {
+            this.state.rightImage = img;
+          }
+          this.updateUI();
+        };
+        img.src = dataUrl;
+      }
+
+      // Handle image upload
+      handleUpload(side) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          this.showProcessing(true);
+          
+          const img = new Image();
+          img.onload = () => {
+            const canvas = side === 'left' ? this.elements.leftCanvas : this.elements.rightCanvas;
+            const ctx = side === 'left' ? this.contexts.leftCtx : this.contexts.rightCtx;
+            
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.imageSmoothingEnabled = true;
+            ctx.drawImage(img, 0, 0);
+            
+            const dataUrl = this.getCanvasDataUrl(canvas);
+            if (side === 'left') {
+              this.state.leftImage = img;
+              this.state.leftCanvasData = dataUrl;
+            } else {
+              this.state.rightImage = img;
+              this.state.rightCanvasData = dataUrl;
+            }
+            
+            this.saveToHistory();
+            this.updateUI();
+            this.showProcessing(false);
+            this.showSuccess('Image uploaded successfully');
+          };
+          
+          img.onerror = () => {
+            this.showProcessing(false);
+            this.showError('Failed to load image');
+          };
+          
+          img.src = URL.createObjectURL(file);
+        };
+        input.click();
+      }
+
+      // Get canvas data URL with current quality settings
+      getCanvasDataUrl(canvas) {
+        const quality = parseFloat(this.elements.outputQualitySelect.value);
+        const format = quality === 1.0 ? 'image/png' : 'image/jpeg';
+        return canvas.toDataURL(format, quality);
+      }
+
+      // Start camera with specified facing mode
+      async startCamera(facingMode = 'environment') {
+        try {
+          if (this.state.currentStream) {
+            this.state.currentStream.getTracks().forEach(track => track.stop());
+          }
+
+          const constraints = {
+            video: { 
+              facingMode: facingMode,
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+              aspectRatio: { ideal: 4/3 }
+            }
+          };
+
+          // Add torch capability if requested
+          if (this.state.flashOn && facingMode === 'environment') {
+            constraints.video.torch = true;
+          }
+
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          this.elements.cameraPreview.srcObject = stream;
+          this.elements.cameraPreview.style.display = 'block';
+          this.elements.photoCaptureBtn.style.display = 'inline-block';
+          this.elements.cameraSwitchBtn.style.display = 'inline-block';
+          this.elements.takePhotoBtn.style.display = 'none';
+          this.state.currentStream = stream;
+          this.elements.cameraStatus.textContent = `Camera active (${this.state.useFrontCamera ? 'Front' : 'Rear'})`;
+
+          // Apply zoom if needed
+          if (this.state.zoomLevel > 1) {
+            this.applyZoom(this.state.zoomLevel);
+          }
+
+          // Set up preview handling
+          this.elements.cameraPreview.onloadedmetadata = () => {
+            const videoWidth = this.elements.cameraPreview.videoWidth;
+            const videoHeight = this.elements.cameraPreview.videoHeight;
+            
+            const containerWidth = this.elements.cameraPreview.clientWidth;
+            const containerHeight = this.elements.cameraPreview.clientHeight;
+            
+            const videoAspect = videoWidth / videoHeight;
+            const containerAspect = containerWidth / containerHeight;
+            
+            if (videoAspect > containerAspect) {
+              this.elements.cameraPreview.style.width = 'auto';
+              this.elements.cameraPreview.style.height = '100%';
+            } else {
+              this.elements.cameraPreview.style.width = '100%';
+              this.elements.cameraPreview.style.height = 'auto';
+            }
+          };
+
+          this.elements.photoCaptureBtn.textContent = `Capture ${this.state.currentCameraSide === 'left' ? 'Left' : 'Right'}`;
+        } catch (err) {
+          this.elements.cameraStatus.textContent = `Camera error: ${err.message}`;
+          this.showError(`Camera error: ${err.message}`);
+          console.error('Camera error:', err);
+        }
+      }
+
+      // Switch between front and rear cameras
+      switchCamera() {
+        this.state.useFrontCamera = !this.state.useFrontCamera;
+        this.startCamera(this.state.useFrontCamera ? 'user' : 'environment');
+      }
+
+      // Toggle flash/torch
+      async toggleFlash() {
+        if (!this.state.currentStream) return;
+        
+        this.state.flashOn = !this.state.flashOn;
+        this.elements.flashToggle.innerHTML = this.state.flashOn ? 
+          '<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg> Flash: On' :
+          '<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg> Flash: Off';
+        
+        if (this.state.useFrontCamera) {
+          this.showError("Flash is not available on front camera");
+          this.state.flashOn = false;
+          return;
+        }
+        
+        try {
+          const videoTrack = this.state.currentStream.getVideoTracks()[0];
+          if (videoTrack.getCapabilities().torch) {
+            await videoTrack.applyConstraints({
+              advanced: [{ torch: this.state.flashOn }]
+            });
+          } else {
+            this.showError("Flash is not supported by your device");
+            this.state.flashOn = false;
+          }
+        } catch (err) {
+          console.error('Error toggling flash:', err);
+          this.showError("Failed to toggle flash");
+          this.state.flashOn = false;
+        }
+      }
+
+      // Handle zoom changes
+      handleZoomChange(zoomLevel) {
+        this.state.zoomLevel = parseFloat(zoomLevel);
+        if (this.state.currentStream) {
+          this.applyZoom(this.state.zoomLevel);
+        }
+      }
+
+      // Apply zoom to camera
+      async applyZoom(zoomLevel) {
+        try {
+          const videoTrack = this.state.currentStream.getVideoTracks()[0];
+          if (videoTrack.getCapabilities().zoom) {
+            await videoTrack.applyConstraints({
+              advanced: [{ zoom: zoomLevel }]
+            });
+          } else {
+            this.showError("Zoom is not supported by your device");
+          }
+        } catch (err) {
+          console.error('Error applying zoom:', err);
+          this.showError("Failed to apply zoom");
+        }
+      }
+
+      // Capture photo from camera
+      capturePhoto() {
+        if (!this.state.currentStream) return;
+        
+        const canvas = this.state.currentCameraSide === 'left' ? this.elements.leftCanvas : this.elements.rightCanvas;
+        const ctx = this.state.currentCameraSide === 'left' ? this.contexts.leftCtx : this.contexts.rightCtx;
+        
+        this.capturePortraitImage(this.elements.cameraPreview, canvas, ctx, this.state.useFrontCamera);
+        
+        const dataUrl = this.getCanvasDataUrl(canvas);
+        if (this.state.currentCameraSide === 'left') {
+          this.state.leftCanvasData = dataUrl;
+          this.state.leftImage = new Image();
+          this.state.leftImage.src = dataUrl;
+          this.state.currentCameraSide = 'right';
+          this.elements.photoCaptureBtn.textContent = 'Capture Right';
+          this.showSuccess("Left image captured");
+        } else {
+          this.state.rightCanvasData = dataUrl;
+          this.state.rightImage = new Image();
+          this.state.rightImage.src = dataUrl;
+          this.stopCamera();
+          this.state.currentCameraSide = 'left';
+          this.showSuccess("Right image captured");
+        }
+        
+        this.saveToHistory();
+        this.updateUI();
+      }
+
+      // Improved camera capture function
+      capturePortraitImage(video, canvas, ctx, isFrontCamera) {
+        const videoWidth = video.videoWidth;
+        const videoHeight = video.videoHeight;
+        
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = videoWidth;
+        tempCanvas.height = videoHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        if (isFrontCamera) {
+          tempCtx.save();
+          tempCtx.scale(-1, 1);
+          tempCtx.drawImage(video, -videoWidth, 0, videoWidth, videoHeight);
+          tempCtx.restore();
+        } else {
+          tempCtx.drawImage(video, 0, 0, videoWidth, videoHeight);
+        }
+        
+        const portraitWidth = Math.min(videoWidth, videoHeight);
+        const portraitHeight = Math.max(videoWidth, videoHeight);
+        
+        canvas.width = portraitWidth;
+        canvas.height = portraitHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.imageSmoothingEnabled = true;
+        
+        if (videoWidth > videoHeight) {
+          ctx.save();
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+          ctx.rotate(Math.PI / 2);
+          ctx.drawImage(tempCanvas, -videoWidth / 2, -videoHeight / 2, videoWidth, videoHeight);
+          ctx.restore();
+        } else {
+          ctx.drawImage(tempCanvas, 
+            (videoWidth - portraitWidth) / 2, 
+            (videoHeight - portraitHeight) / 2,
+            portraitWidth, 
+            portraitHeight,
+            0, 
+            0,
+            portraitWidth,
+            portraitHeight
+          );
+        }
+      }
+
+      // Stop camera
+      stopCamera() {
+        if (this.state.currentStream) {
+          this.state.currentStream.getTracks().forEach(track => track.stop());
+          this.state.currentStream = null;
+        }
+        this.elements.cameraPreview.style.display = 'none';
+        this.elements.photoCaptureBtn.style.display = 'none';
+        this.elements.cameraSwitchBtn.style.display = 'none';
+        this.elements.takePhotoBtn.style.display = 'inline-block';
+        this.elements.cameraStatus.textContent = 'Camera not active';
+      }
+
+      // Auto-align images
+      autoAlignImages() {
+        if (!this.state.leftImage || !this.state.rightImage) {
+          this.showError('Please upload both images first!');
+          return;
+        }
+
+        this.showProcessing(true);
+        
+        setTimeout(() => {
+          try {
+            const targetWidth = Math.max(this.state.leftImage.width, this.state.rightImage.width);
+            const targetHeight = Math.max(this.state.leftImage.height, this.state.rightImage.height);
+
+            this.elements.leftCanvas.width = this.elements.rightCanvas.width = targetWidth;
+            this.elements.leftCanvas.height = this.elements.rightCanvas.height = targetHeight;
+
+            this.contexts.leftCtx.clearRect(0, 0, targetWidth, targetHeight);
+            this.contexts.rightCtx.clearRect(0, 0, targetWidth, targetHeight);
+            
+            this.contexts.leftCtx.imageSmoothingEnabled = true;
+            this.contexts.rightCtx.imageSmoothingEnabled = true;
+            
+            const leftScale = Math.min(
+              targetWidth / this.state.leftImage.width,
+              targetHeight / this.state.leftImage.height
+            );
+            const rightScale = Math.min(
+              targetWidth / this.state.rightImage.width,
+              targetHeight / this.state.rightImage.height
+            );
+            
+            const leftNewWidth = this.state.leftImage.width * leftScale;
+            const leftNewHeight = this.state.leftImage.height * leftScale;
+            const rightNewWidth = this.state.rightImage.width * rightScale;
+            const rightNewHeight = this.state.rightImage.height * rightScale;
+            
+            this.contexts.leftCtx.drawImage(
+              this.state.leftImage,
+              (targetWidth - leftNewWidth) / 2,
+              (targetHeight - leftNewHeight) / 2,
+              leftNewWidth,
+              leftNewHeight
+            );
+            
+            this.contexts.rightCtx.drawImage(
+              this.state.rightImage,
+              (targetWidth - rightNewWidth) / 2,
+              (targetHeight - rightNewHeight) / 2,
+              rightNewWidth,
+              rightNewHeight
+            );
+            
+            this.state.leftCanvasData = this.getCanvasDataUrl(this.elements.leftCanvas);
+            this.state.rightCanvasData = this.getCanvasDataUrl(this.elements.rightCanvas);
+            this.state.leftImage = new Image();
+            this.state.leftImage.src = this.state.leftCanvasData;
+            this.state.rightImage = new Image();
+            this.state.rightImage.src = this.state.rightCanvasData;
+            
+            this.saveToHistory();
+            this.updateUI();
+            this.showProcessing(false);
+            this.showSuccess('Images auto-aligned');
+          } catch (err) {
+            console.error('Auto-align error:', err);
+            this.showProcessing(false);
+            this.showError('Failed to auto-align images');
+          }
+        }, 100);
+      }
+
+      // Generate side-by-side image
+      generateSideBySide() {
+        if (!this.state.leftImage || !this.state.rightImage) {
+          this.showError('Please upload both images first!');
+          return;
+        }
+
+        this.showProcessing(true);
+        
+        setTimeout(() => {
+          try {
+            this.elements.resultCanvas.style.setProperty('--result-aspect-ratio', '4/3');
+
+            let outputWidth = this.state.leftImage.width + this.state.rightImage.width;
+            let outputHeight = Math.max(this.state.leftImage.height, this.state.rightImage.height);
+            
+            const sizeOption = this.elements.outputSizeSelect.value;
+            if (sizeOption !== 'original') {
+              const targetHeight = sizeOption === '1080p' ? 1080 : 720;
+              const scale = targetHeight / outputHeight;
+              outputWidth = Math.round(outputWidth * scale);
+              outputHeight = targetHeight;
+            }
+
+            this.elements.resultCanvas.width = outputWidth;
+            this.elements.resultCanvas.height = outputHeight;
+            
+            this.contexts.resultCtx.clearRect(0, 0, this.elements.resultCanvas.width, this.elements.resultCanvas.height);
+            this.contexts.resultCtx.imageSmoothingEnabled = true;
+            
+            const leftScale = outputHeight / this.state.leftImage.height;
+            const leftWidth = this.state.leftImage.width * leftScale;
+            this.contexts.resultCtx.drawImage(
+              this.state.leftImage,
+              0, 0,
+              leftWidth, outputHeight
+            );
+            
+            const rightScale = outputHeight / this.state.rightImage.height;
+            const rightWidth = this.state.rightImage.width * rightScale;
+            this.contexts.resultCtx.drawImage(
+              this.state.rightImage,
+              leftWidth, 0,
+              rightWidth, outputHeight
+            );
+            
+            this.state.resultCanvasData = this.getCanvasDataUrl(this.elements.resultCanvas);
+            
+            this.saveToHistory();
+            this.updateUI();
+            this.showProcessing(false);
+            this.showSuccess('Side-by-side image generated');
+          } catch (err) {
+            console.error('Side-by-side generation error:', err);
+            this.showProcessing(false);
+            this.showError('Failed to generate side-by-side image');
+          }
+        }, 100);
+      }
+
+      // Generate anaglyph image
+      generateAnaglyph() {
+        if (!this.state.leftImage || !this.state.rightImage) {
+          this.showError('Please upload both images first!');
+          return;
+        }
+
+        this.showProcessing(true);
+        
+        setTimeout(() => {
+          try {
+            this.elements.resultCanvas.style.setProperty('--result-aspect-ratio', '3/4');
+
+            let width = Math.max(this.state.leftImage.width, this.state.rightImage.width);
+            let height = Math.max(this.state.leftImage.height, this.state.rightImage.height);
+            
+            const sizeOption = this.elements.outputSizeSelect.value;
+            if (sizeOption !== 'original') {
+              const targetHeight = sizeOption === '1080p' ? 1440 : 960;
+              const scale = targetHeight / height;
+              width = Math.round(width * scale);
+              height = targetHeight;
+            }
+
+            // Create temporary canvases
+            const tempLeftCanvas = document.createElement('canvas');
+            tempLeftCanvas.width = width;
+            tempLeftCanvas.height = height;
+            const tempLeftCtx = tempLeftCanvas.getContext('2d');
+            tempLeftCtx.imageSmoothingEnabled = true;
+            
+            // Scale and center left image with horizontal offset
+            const leftScale = Math.min(
+              width / this.state.leftImage.width,
+              height / this.state.leftImage.height
+            );
+            const leftNewWidth = this.state.leftImage.width * leftScale;
+            const leftNewHeight = this.state.leftImage.height * leftScale;
+            
+            const hOffset = parseInt(this.elements.horizontalOffset.value);
+            const vOffset = parseInt(this.elements.verticalOffset.value);
+            
+            tempLeftCtx.drawImage(
+              this.state.leftImage,
+              (width - leftNewWidth) / 2 + hOffset,
+              (height - leftNewHeight) / 2 + vOffset,
+              leftNewWidth,
+              leftNewHeight
+            );
+
+            const tempRightCanvas = document.createElement('canvas');
+            tempRightCanvas.width = width;
+            tempRightCanvas.height = height;
+            const tempRightCtx = tempRightCanvas.getContext('2d');
+            tempRightCtx.imageSmoothingEnabled = true;
+            
+            // Scale and center right image
+            const rightScale = Math.min(
+              width / this.state.rightImage.width,
+              height / this.state.rightImage.height
+            );
+            const rightNewWidth = this.state.rightImage.width * rightScale;
+            const rightNewHeight = this.state.rightImage.height * rightScale;
+            tempRightCtx.drawImage(
+              this.state.rightImage,
+              (width - rightNewWidth) / 2,
+              (height - rightNewHeight) / 2,
+              rightNewWidth,
+              rightNewHeight
+            );
+
+            // Set result canvas size
+            this.elements.resultCanvas.width = width;
+            this.elements.resultCanvas.height = height;
+            this.contexts.resultCtx.clearRect(0, 0, width, height);
+
+            // Create the anaglyph effect with convergence adjustment
+            const convergence = parseInt(this.elements.convergence.value) / 100;
+            const leftData = tempLeftCtx.getImageData(0, 0, width, height);
+            const rightData = tempRightCtx.getImageData(0, 0, width, height);
+            const resultData = this.contexts.resultCtx.createImageData(width, height);
+
+            for (let i = 0; i < leftData.data.length; i += 4) {
+              // Apply convergence by blending colors based on convergence value
+              resultData.data[i] = leftData.data[i]; // Red from left
+              
+              // Green and blue from right, adjusted by convergence
+              resultData.data[i + 1] = Math.min(255, rightData.data[i + 1] * (1 + convergence));
+              resultData.data[i + 2] = Math.min(255, rightData.data[i + 2] * (1 + convergence));
+              
+              resultData.data[i + 3] = 255; // Alpha
+            }
+
+            this.contexts.resultCtx.putImageData(resultData, 0, 0);
+            this.state.resultCanvasData = this.getCanvasDataUrl(this.elements.resultCanvas);
+            
+            this.saveToHistory();
+            this.updateUI();
+            this.showProcessing(false);
+            this.showSuccess('Anaglyph image generated');
+          } catch (err) {
+            console.error('Anaglyph generation error:', err);
+            this.showProcessing(false);
+            this.showError('Failed to generate anaglyph image');
+          }
+        }, 100);
+      }
+
+      // Save result image
+      saveResult() {
+        if (this.elements.resultCanvas.width === 0 || this.elements.resultCanvas.height === 0) {
+          this.showError('No result to save! Generate an image first.');
+          return;
+        }
+
+        const link = document.createElement('a');
+        link.download = 'stereo-image.' + (this.elements.outputQualitySelect.value === '1.0' ? 'png' : 'jpg');
+        link.href = this.state.resultCanvasData || this.getCanvasDataUrl(this.elements.resultCanvas);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        this.showSuccess('Image saved successfully');
+      }
+
+      // Update UI state
+      updateUI() {
+        const hasBothImages = this.state.leftImage && this.state.rightImage;
+        this.elements.autoAlignBtn.disabled = !hasBothImages;
+        this.elements.generateSideBySideBtn.disabled = !hasBothImages;
+        this.elements.generateAnaglyphBtn.disabled = !hasBothImages;
+        this.elements.saveResultBtn.disabled = !this.state.resultCanvasData;
+        
+        if (this.elements.photoCaptureBtn.style.display !== 'none') {
+          this.elements.photoCaptureBtn.textContent = `Capture ${this.state.currentCameraSide === 'left' ? 'Left' : 'Right'}`;
+        }
+        
+        // Update history buttons
+        this.elements.undoBtn.disabled = this.state.historyIndex <= 0;
+        this.elements.redoBtn.disabled = this.state.historyIndex >= this.state.history.length - 1;
+      }
+
+      // Save current state to history
+      saveToHistory() {
+        // Don't save if nothing has changed
+        if (this.state.history.length > 0) {
+          const lastState = this.state.history[this.state.historyIndex];
+          if (lastState.leftCanvasData === this.state.leftCanvasData &&
+              lastState.rightCanvasData === this.state.rightCanvasData &&
+              lastState.resultCanvasData === this.state.resultCanvasData) {
+            return;
+          }
+        }
+        
+        // Truncate any future history if we're not at the end
+        if (this.state.historyIndex < this.state.history.length - 1) {
+          this.state.history = this.state.history.slice(0, this.state.historyIndex + 1);
+        }
+        
+        // Save current state
+        this.state.history.push({
+          leftCanvasData: this.state.leftCanvasData,
+          rightCanvasData: this.state.rightCanvasData,
+          resultCanvasData: this.state.resultCanvasData
+        });
+        
+        this.state.historyIndex = this.state.history.length - 1;
+        
+        // Limit history size
+        if (this.state.history.length > 20) {
+          this.state.history.shift();
+          this.state.historyIndex--;
+        }
+      }
+
+      // Undo last action
+      undo() {
+        if (this.state.historyIndex <= 0) return;
+        
+        this.state.historyIndex--;
+        const state = this.state.history[this.state.historyIndex];
+        
+        this.state.leftCanvasData = state.leftCanvasData;
+        this.state.rightCanvasData = state.rightCanvasData;
+        this.state.resultCanvasData = state.resultCanvasData;
+        
+        if (state.leftCanvasData) {
+          this.restoreCanvas(this.elements.leftCanvas, state.leftCanvasData);
+        } else {
+          this.state.leftImage = null;
+          this.initCanvases();
+        }
+        
+        if (state.rightCanvasData) {
+          this.restoreCanvas(this.elements.rightCanvas, state.rightCanvasData);
+        } else {
+          this.state.rightImage = null;
+          this.initCanvases();
+        }
+        
+        if (state.resultCanvasData) {
+          this.restoreCanvas(this.elements.resultCanvas, state.resultCanvasData);
+        } else {
+          this.contexts.resultCtx.clearRect(0, 0, this.elements.resultCanvas.width, this.elements.resultCanvas.height);
+        }
+        
+        this.updateUI();
+      }
+
+      // Redo undone action
+      redo() {
+        if (this.state.historyIndex >= this.state.history.length - 1) return;
+        
+        this.state.historyIndex++;
+        const state = this.state.history[this.state.historyIndex];
+        
+        this.state.leftCanvasData = state.leftCanvasData;
+        this.state.rightCanvasData = state.rightCanvasData;
+        this.state.resultCanvasData = state.resultCanvasData;
+        
+        if (state.leftCanvasData) {
+          this.restoreCanvas(this.elements.leftCanvas, state.leftCanvasData);
+        } else {
+          this.state.leftImage = null;
+          this.initCanvases();
+        }
+        
+        if (state.rightCanvasData) {
+          this.restoreCanvas(this.elements.rightCanvas, state.rightCanvasData);
+        } else {
+          this.state.rightImage = null;
+          this.initCanvases();
+        }
+        
+        if (state.resultCanvasData) {
+          this.restoreCanvas(this.elements.resultCanvas, state.resultCanvasData);
+        } else {
+          this.contexts.resultCtx.clearRect(0, 0, this.elements.resultCanvas.width, this.elements.resultCanvas.height);
+        }
+        
+        this.updateUI();
+      }
+
+      // Reset all images and state
+      resetAll() {
+        if (!confirm('Are you sure you want to reset everything? This cannot be undone.')) {
+          return;
+        }
+        
+        this.stopCamera();
+        
+        this.state.leftImage = null;
+        this.state.rightImage = null;
+        this.state.leftCanvasData = null;
+        this.state.rightCanvasData = null;
+        this.state.resultCanvasData = null;
+        this.state.currentCameraSide = 'left';
+        
+        this.contexts.leftCtx.clearRect(0, 0, this.elements.leftCanvas.width, this.elements.leftCanvas.height);
+        this.contexts.rightCtx.clearRect(0, 0, this.elements.rightCanvas.width, this.elements.rightCanvas.height);
+        this.contexts.resultCtx.clearRect(0, 0, this.elements.resultCanvas.width, this.elements.resultCanvas.height);
+        
+        this.elements.horizontalOffset.value = 0;
+        this.elements.verticalOffset.value = 0;
+        this.elements.convergence.value = 50;
+        this.elements.offsetValue.textContent = '0';
+        this.elements.verticalOffsetValue.textContent = '0';
+        this.elements.convergenceValue.textContent = '50';
+        
+        this.initCanvases();
+        this.saveToHistory();
+        this.updateUI();
+        
+        this.showSuccess('All images and settings have been reset');
+      }
+
+      // Show processing indicator
+      showProcessing(show) {
+        this.elements.processingIndicator.style.display = show ? 'block' : 'none';
+      }
+
+      // Show error message
+      showError(message) {
+        this.elements.errorMessage.textContent = message;
+        this.elements.errorMessage.style.display = 'block';
+        this.elements.successMessage.style.display = 'none';
+        
+        setTimeout(() => {
+          this.elements.errorMessage.style.display = 'none';
+        }, 5000);
+      }
+
+      // Show success message
+      showSuccess(message) {
+        this.elements.successMessage.textContent = message;
+        this.elements.successMessage.style.display = 'block';
+        this.elements.errorMessage.style.display = 'none';
+        
+        setTimeout(() => {
+          this.elements.successMessage.style.display = 'none';
+        }, 3000);
+      }
+
+      // Handle window resize
+      handleWindowResize() {
+        const newOrientation = window.matchMedia("(orientation: portrait)").matches ? 'portrait' : 'landscape';
+        if (newOrientation !== this.state.currentOrientation) {
+          this.state.currentOrientation = newOrientation;
+          if (this.state.currentStream) {
+            this.startCamera(this.state.useFrontCamera ? 'user' : 'environment');
+          }
+        }
+        this.initCanvases();
+      }
+
+      // Handle visibility change
+      handleVisibilityChange() {
+        if (!document.hidden) {
+          if (this.state.leftCanvasData) this.restoreCanvas(this.elements.leftCanvas, this.state.leftCanvasData);
+          if (this.state.rightCanvasData) this.restoreCanvas(this.elements.rightCanvas, this.state.rightCanvasData);
+          if (this.state.resultCanvasData) this.restoreCanvas(this.elements.resultCanvas, this.state.resultCanvasData);
+        }
+      }
+
+      // Tutorial functions
+      showTutorial() {
+        this.state.tutorialStep = 1;
+        this.updateTutorial();
+        this.elements.tutorialOverlay.style.display = 'flex';
+      }
+
+      prevTutorialStep() {
+        if (this.state.tutorialStep > 1) {
+          this.state.tutorialStep--;
+          this.updateTutorial();
+        }
+      }
+
+      nextTutorialStep() {
+        if (this.state.tutorialStep < 5) {
+          this.state.tutorialStep++;
+          this.updateTutorial();
+        }
+      }
+
+      updateTutorial() {
+        // Hide all steps
+        document.querySelectorAll('.tutorial-step').forEach(step => {
+          step.classList.remove('active');
+        });
+        
+        // Show current step
+        document.getElementById(`step${this.state.tutorialStep}`).classList.add('active');
+        
+        // Update indicators
+        document.querySelectorAll('.tutorial-indicator').forEach((indicator, index) => {
+          if (index + 1 === this.state.tutorialStep) {
+            indicator.classList.add('active');
+          } else {
+            indicator.classList.remove('active');
+          }
+        });
+        
+        // Update button states
+        this.elements.prevStep.disabled = this.state.tutorialStep === 1;
+        this.elements.nextStep.style.display = this.state.tutorialStep === 5 ? 'none' : 'inline-block';
+        this.elements.closeTutorial.style.display = this.state.tutorialStep === 5 ? 'inline-block' : 'none';
+      }
+
+      closeTutorial() {
+        this.elements.tutorialOverlay.style.display = 'none';
+      }
+
+      // Check if this is the first visit
+      checkFirstVisit() {
+        if (!localStorage.getItem('stereoAppVisited')) {
+          localStorage.setItem('stereoAppVisited', 'true');
+          this.showTutorial();
+        }
+      }
+    }
+
+    // Initialize the app when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      const app = new StereoImageApp();
+      
+      // Make app available globally for debugging if needed
+      window.stereoApp = app;
+    });
+  </script>
 </body>
 </html>
