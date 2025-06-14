@@ -330,31 +330,16 @@
   gap: 8px;
   margin-top: 12px;
   width: 100%;
+  flex-wrap: wrap;
 }
 
-.history-btn {  /* Added missing dot */
+.history-btn {
   padding: 8px 12px;
   font-size: 13px;
-  min-width: auto;
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+  min-width: 0;
+  flex: 1 1 calc(50% - 4px);
+  box-sizing: border-box;
 }
-
-/* Make more compact on mobile */
-@media (max-width: 480px) {
-  .history-btn {
-    padding: 8px;
-  }
-  
-  .history-btn .btn-icon {
-    width: 16px;
-    height: 16px;
-  }
-}
-
     .tutorial-overlay {
       position: fixed;
       top: 0;
@@ -390,6 +375,13 @@
       display: flex;
       justify-content: space-between;
       margin-top: 20px;
+      width: 100%;
+      gap: 8px;
+    }
+
+    .tutorial-nav .btn {
+      flex: 1;
+      min-width: auto;
     }
 
     .tutorial-indicators {
