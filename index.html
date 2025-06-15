@@ -25,6 +25,21 @@
       --success: #2ec4b6;
     }
 
+    /* Dark mode variables */
+    [data-theme="dark"] {
+      --primary: #4895ef;
+      --primary-dark: #3a7bd5;
+      --secondary: #4361ee;
+      --text: #f8f9fa;
+      --text-light: #adb5bd;
+      --border: #495057;
+      --bg: #212529;
+      --bg-light: #343a40;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      --error: #ff6b6b;
+      --success: #51cf66;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -41,6 +56,7 @@
       margin: 0 auto;
       touch-action: manipulation;
       -webkit-font-smoothing: antialiased;
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
     .app-container {
@@ -52,6 +68,9 @@
     header {
       text-align: center;
       margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     h1 {
@@ -74,6 +93,7 @@
       padding: 24px;
       box-shadow: var(--shadow);
       position: relative;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
     }
 
     .section-title {
@@ -126,21 +146,21 @@
     }
 
     .btn:disabled {
-      background-color: #e2e8f0;
-      color: #94a3b8;
+      background-color: var(--border);
+      color: var(--text-light);
       cursor: not-allowed;
       transform: none;
     }
 
     .btn-secondary {
-      background-color: white;
+      background-color: var(--bg-light);
       color: var(--primary);
       border: 1px solid var(--border);
     }
 
     .btn-secondary:hover {
-      background-color: #f8fafc;
-      border-color: #cbd5e1;
+      background-color: var(--bg);
+      border-color: var(--text-light);
     }
 
     .btn-icon {
@@ -181,9 +201,9 @@
       border: 1px solid var(--border);
       width: 100%;
       max-width: 100%;
-      background: #f8f8f8;
-      background-image: linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%),
-                        linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%);
+      background: var(--bg);
+      background-image: linear-gradient(45deg, var(--border) 25%, transparent 25%, transparent 75%, var(--border) 75%),
+                        linear-gradient(45deg, var(--border) 25%, transparent 25%, transparent 75%, var(--border) 75%);
       background-size: 20px 20px;
       background-position: 0 0, 10px 10px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -256,7 +276,8 @@
       border-radius: var(--radius-sm);
       border: 1px solid var(--border);
       font-size: 14px;
-      background-color: white;
+      background-color: var(--bg-light);
+      color: var(--text);
       transition: var(--transition);
     }
 
@@ -281,6 +302,7 @@
 
     .slider-container input[type="range"] {
       width: 100%;
+      background: var(--border);
     }
 
     .result-wrapper {
@@ -297,7 +319,7 @@
       height: auto;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border);
-      background: #f8f8f8;
+      background: var(--bg);
       aspect-ratio: var(--result-aspect-ratio);
     }
 
@@ -325,21 +347,22 @@
       to { transform: rotate(360deg); }
     }
 
-.history-controls {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-  width: 100%;
-  flex-wrap: wrap;
-}
+    .history-controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      width: 100%;
+      flex-wrap: wrap;
+    }
 
-.history-btn {
-  padding: 8px 12px;
-  font-size: 13px;
-  min-width: 0;
-  flex: 1 1 calc(50% - 4px);
-  box-sizing: border-box;
-}
+    .history-btn {
+      padding: 8px 12px;
+      font-size: 13px;
+      min-width: 0;
+      flex: 1 1 calc(50% - 4px);
+      box-sizing: border-box;
+    }
+
     .tutorial-overlay {
       position: fixed;
       top: 0;
@@ -354,7 +377,7 @@
     }
 
     .tutorial-content {
-      background-color: white;
+      background-color: var(--bg-light);
       border-radius: var(--radius);
       padding: 24px;
       max-width: 600px;
@@ -455,14 +478,50 @@
       margin-bottom: 8px;
     }
 
-    .cross-eye-instructions {
+    .viewing-instructions {
       display: none;
-      background-color: #f0f9ff;
-      border-left: 4px solid #3b82f6;
+      background-color: var(--bg);
+      border-left: 4px solid var(--primary);
       padding: 12px;
       margin-top: 12px;
       border-radius: 4px;
       font-size: 14px;
+    }
+
+    .viewing-instructions h4 {
+      margin-bottom: 8px;
+      color: var(--primary);
+    }
+
+    .viewing-instructions ol {
+      padding-left: 20px;
+    }
+
+    .viewing-instructions li {
+      margin-bottom: 6px;
+    }
+
+    .theme-toggle {
+      background: none;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      transition: background-color 0.2s ease;
+    }
+
+    .theme-toggle:hover {
+      background-color: var(--border);
+    }
+
+    .theme-icon {
+      width: 18px;
+      height: 18px;
     }
 
     @media (max-width: 768px) {
@@ -533,14 +592,28 @@
       .canvas-wrapper {
         flex: 0 0 calc(50% - 4px);
       }
+
+      header {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="app-container">
     <header>
-      <h1>Stereo Image Generator</h1>
-      <p class="subtitle">Create side-by-side, cross-eye, or red-cyan anaglyph 3D images from your photos</p>
+      <div>
+        <h1>Stereo Image Generator</h1>
+        <p class="subtitle">Create side-by-side, cross-eye, or red-cyan anaglyph 3D images from your photos</p>
+      </div>
+      <button class="theme-toggle" id="themeToggle">
+        <svg class="theme-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        Light Mode
+      </button>
     </header>
     
     <div class="card">
@@ -600,6 +673,12 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
           </svg>
           Capture Left
+        </button>
+        <button id="closeCameraBtn" class="btn btn-secondary" style="display: none;">
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+          Close Camera
         </button>
       </div>
       
@@ -731,13 +810,37 @@
         </button>
       </div>
       
-      <div class="cross-eye-instructions" id="crossEyeInstructions">
-        <strong>How to view Cross-Eye 3D:</strong>
+      <div class="viewing-instructions" id="sideBySideInstructions">
+        <h4>How to view Side-by-Side 3D:</h4>
+        <ol>
+          <li>Use a VR headset or a stereoscopic viewer designed for side-by-side images</li>
+          <li>Alternatively, you can try the parallel viewing method:
+            <ol type="a">
+              <li>Position the image about 30cm (12 inches) from your eyes</li>
+              <li>Relax your eyes as if looking into the distance</li>
+              <li>The two images should merge into one 3D image</li>
+            </ol>
+          </li>
+        </ol>
+      </div>
+      
+      <div class="viewing-instructions" id="crossEyeInstructions">
+        <h4>How to view Cross-Eye 3D:</h4>
         <ol>
           <li>Position the image about 30cm (12 inches) from your eyes</li>
           <li>Cross your eyes slightly until you see three images</li>
           <li>Focus on the middle image which should appear in 3D</li>
           <li>Relax your eyes if you feel strain</li>
+        </ol>
+      </div>
+      
+      <div class="viewing-instructions" id="anaglyphInstructions">
+        <h4>How to view Red/Cyan Anaglyph 3D:</h4>
+        <ol>
+          <li>Use classic red/cyan 3D glasses (red lens on left eye, cyan on right)</li>
+          <li>View the image on a well-lit screen</li>
+          <li>Ensure the image is large enough for comfortable viewing</li>
+          <li>Adjust the convergence slider if the 3D effect feels uncomfortable</li>
         </ol>
       </div>
       
@@ -860,6 +963,7 @@
           helpBtn: document.getElementById('helpBtn'),
           cameraSwitchBtn: document.getElementById('cameraSwitchBtn'),
           photoCaptureBtn: document.getElementById('photoCaptureBtn'),
+          closeCameraBtn: document.getElementById('closeCameraBtn'),
           flashToggle: document.getElementById('flashToggle'),
           zoomControl: document.getElementById('zoomControl'),
           cameraPreview: document.getElementById('cameraPreview'),
@@ -892,7 +996,10 @@
           prevStep: document.getElementById('prevStep'),
           nextStep: document.getElementById('nextStep'),
           closeTutorial: document.getElementById('closeTutorial'),
-          crossEyeInstructions: document.getElementById('crossEyeInstructions')
+          sideBySideInstructions: document.getElementById('sideBySideInstructions'),
+          crossEyeInstructions: document.getElementById('crossEyeInstructions'),
+          anaglyphInstructions: document.getElementById('anaglyphInstructions'),
+          themeToggle: document.getElementById('themeToggle')
         };
 
         // Canvas contexts
@@ -918,7 +1025,8 @@
           historyIndex: -1,
           currentOrientation: window.matchMedia("(orientation: portrait)").matches ? 'portrait' : 'landscape',
           tutorialStep: 1,
-          currentMode: null // 'side-by-side', 'cross-eye', 'anaglyph'
+          currentMode: null, // 'side-by-side', 'cross-eye', 'anaglyph'
+          darkMode: false
         };
 
         // Initialize
@@ -926,6 +1034,7 @@
         this.initCanvases();
         this.updateUI();
         this.checkFirstVisit();
+        this.initTheme();
       }
 
       // Initialize event listeners
@@ -938,6 +1047,7 @@
         this.elements.takePhotoBtn.addEventListener('click', () => this.startCamera(this.state.useFrontCamera ? 'user' : 'environment'));
         this.elements.cameraSwitchBtn.addEventListener('click', () => this.switchCamera());
         this.elements.photoCaptureBtn.addEventListener('click', () => this.capturePhoto());
+        this.elements.closeCameraBtn.addEventListener('click', () => this.stopCamera());
         this.elements.flashToggle.addEventListener('click', () => this.toggleFlash());
         this.elements.zoomControl.addEventListener('input', (e) => this.handleZoomChange(e.target.value));
 
@@ -946,17 +1056,17 @@
         this.elements.generateSideBySideBtn.addEventListener('click', () => {
           this.state.currentMode = 'side-by-side';
           this.generateSideBySide();
-          this.elements.crossEyeInstructions.style.display = 'none';
+          this.showInstructions('side-by-side');
         });
         this.elements.generateCrossEyeBtn.addEventListener('click', () => {
           this.state.currentMode = 'cross-eye';
           this.generateCrossEye();
-          this.elements.crossEyeInstructions.style.display = 'block';
+          this.showInstructions('cross-eye');
         });
         this.elements.generateAnaglyphBtn.addEventListener('click', () => {
           this.state.currentMode = 'anaglyph';
           this.generateAnaglyph();
-          this.elements.crossEyeInstructions.style.display = 'none';
+          this.showInstructions('anaglyph');
         });
         this.elements.saveResultBtn.addEventListener('click', () => this.saveResult());
 
@@ -1008,11 +1118,68 @@
         this.elements.prevStep.addEventListener('click', () => this.prevTutorialStep());
         this.elements.nextStep.addEventListener('click', () => this.nextTutorialStep());
         this.elements.closeTutorial.addEventListener('click', () => this.closeTutorial());
+        
+        // Hide all instructions initially
+        this.elements.sideBySideInstructions.style.display = 'none';
         this.elements.crossEyeInstructions.style.display = 'none';
+        this.elements.anaglyphInstructions.style.display = 'none';
+
+        // Theme toggle
+        this.elements.themeToggle.addEventListener('click', () => this.toggleTheme());
 
         // Window events
         window.addEventListener('resize', () => this.handleWindowResize());
         document.addEventListener('visibilitychange', () => this.handleVisibilityChange());
+      }
+
+      // Initialize theme
+      initTheme() {
+        // Check for saved theme preference or use preferred color scheme
+        const savedTheme = localStorage.getItem('stereoAppTheme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme) {
+          this.state.darkMode = savedTheme === 'dark';
+        } else {
+          this.state.darkMode = prefersDark;
+        }
+        
+        this.applyTheme();
+      }
+
+      // Toggle between dark and light theme
+      toggleTheme() {
+        this.state.darkMode = !this.state.darkMode;
+        this.applyTheme();
+        localStorage.setItem('stereoAppTheme', this.state.darkMode ? 'dark' : 'light');
+      }
+
+      // Apply the current theme
+      applyTheme() {
+        if (this.state.darkMode) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          this.elements.themeToggle.innerHTML = 
+            '<svg class="theme-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg> Dark Mode';
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+          this.elements.themeToggle.innerHTML = 
+            '<svg class="theme-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg> Light Mode';
+        }
+      }
+
+      // Show appropriate instructions based on mode
+      showInstructions(mode) {
+        this.elements.sideBySideInstructions.style.display = 'none';
+        this.elements.crossEyeInstructions.style.display = 'none';
+        this.elements.anaglyphInstructions.style.display = 'none';
+        
+        if (mode === 'side-by-side') {
+          this.elements.sideBySideInstructions.style.display = 'block';
+        } else if (mode === 'cross-eye') {
+          this.elements.crossEyeInstructions.style.display = 'block';
+        } else if (mode === 'anaglyph') {
+          this.elements.anaglyphInstructions.style.display = 'block';
+        }
       }
 
       // Initialize canvases with proper aspect ratio
@@ -1141,6 +1308,7 @@
           this.elements.cameraPreview.style.display = 'block';
           this.elements.photoCaptureBtn.style.display = 'inline-block';
           this.elements.cameraSwitchBtn.style.display = 'inline-block';
+          this.elements.closeCameraBtn.style.display = 'inline-block';
           this.elements.takePhotoBtn.style.display = 'none';
           this.state.currentStream = stream;
           this.elements.cameraStatus.textContent = `Camera active (${this.state.useFrontCamera ? 'Front' : 'Rear'})`;
@@ -1188,32 +1356,39 @@
       async toggleFlash() {
         if (!this.state.currentStream) return;
         
-        this.state.flashOn = !this.state.flashOn;
-        this.elements.flashToggle.innerHTML = this.state.flashOn ? 
-          '<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg> Flash: On' :
-          '<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg> Flash: Off';
-        
-        if (this.state.useFrontCamera) {
-          this.showError("Flash is not available on front camera");
-          this.state.flashOn = false;
-          return;
-        }
-        
         try {
           const videoTrack = this.state.currentStream.getVideoTracks()[0];
-          if (videoTrack.getCapabilities().torch) {
-            await videoTrack.applyConstraints({
-              advanced: [{ torch: this.state.flashOn }]
-            });
-          } else {
+          
+          // Check if flash is supported
+          if (!videoTrack.getCapabilities().torch) {
             this.showError("Flash is not supported by your device");
             this.state.flashOn = false;
+            this.updateFlashButton();
+            return;
           }
+          
+          // Toggle flash state
+          this.state.flashOn = !this.state.flashOn;
+          
+          // Apply the new flash state
+          await videoTrack.applyConstraints({
+            advanced: [{ torch: this.state.flashOn }]
+          });
+          
+          this.updateFlashButton();
         } catch (err) {
           console.error('Error toggling flash:', err);
           this.showError("Failed to toggle flash");
           this.state.flashOn = false;
+          this.updateFlashButton();
         }
+      }
+
+      // Update flash button text and icon
+      updateFlashButton() {
+        this.elements.flashToggle.innerHTML = this.state.flashOn ? 
+          '<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg> Flash: On' :
+          '<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg> Flash: Off';
       }
 
       // Handle zoom changes
@@ -1327,8 +1502,13 @@
         this.elements.cameraPreview.style.display = 'none';
         this.elements.photoCaptureBtn.style.display = 'none';
         this.elements.cameraSwitchBtn.style.display = 'none';
+        this.elements.closeCameraBtn.style.display = 'none';
         this.elements.takePhotoBtn.style.display = 'inline-block';
         this.elements.cameraStatus.textContent = 'Camera not active';
+        
+        // Turn off flash when camera is closed
+        this.state.flashOn = false;
+        this.updateFlashButton();
       }
 
       // Auto-align images
@@ -1807,7 +1987,11 @@
         this.elements.offsetValue.textContent = '0';
         this.elements.verticalOffsetValue.textContent = '0';
         this.elements.convergenceValue.textContent = '50';
+        
+        // Hide all instructions
+        this.elements.sideBySideInstructions.style.display = 'none';
         this.elements.crossEyeInstructions.style.display = 'none';
+        this.elements.anaglyphInstructions.style.display = 'none';
         
         this.initCanvases();
         this.saveToHistory();
@@ -1931,4 +2115,4 @@
     });
   </script>
 </body>
-</html>
+  </html>
