@@ -175,12 +175,17 @@
       width: 100%;
       overflow-x: auto;
       padding-bottom: 10px;
+      justify-content: center;
     }
 
     .canvas-wrapper {
       flex: 0 0 calc(50% - 8px);
+      max-width: 45%;
       min-width: 0;
       position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .canvas-label {
@@ -199,8 +204,8 @@
     canvas {
       border-radius: var(--radius-sm);
       border: 1px solid var(--border);
-      width: 100%;
       max-width: 100%;
+      max-height: 60vh;
       background: var(--bg);
       background-image: linear-gradient(45deg, var(--border) 25%, transparent 25%, transparent 75%, var(--border) 75%),
                         linear-gradient(45deg, var(--border) 25%, transparent 25%, transparent 75%, var(--border) 75%);
@@ -209,7 +214,7 @@
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
       image-rendering: -webkit-optimize-contrast;
       image-rendering: crisp-edges;
-      aspect-ratio: 3/4;
+      object-fit: contain;
     }
 
     #cameraPreview {
@@ -320,7 +325,13 @@
       border-radius: var(--radius-sm);
       border: 1px solid var(--border);
       background: var(--bg);
-      aspect-ratio: var(--result-aspect-ratio);
+      background-image: linear-gradient(45deg, var(--border) 25%, transparent 25%, transparent 75%, var(--border) 75%),
+                        linear-gradient(45deg, var(--border) 25%, transparent 25%, transparent 75%, var(--border) 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 10px 10px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
     }
 
     .loading {
@@ -540,6 +551,7 @@
       
       .canvas-wrapper {
         flex: 0 0 calc(50% - 8px);
+        max-width: 100%;
       }
     }
 
@@ -586,17 +598,35 @@
       }
       
       .canvas-container {
+        flex-direction: column;
         gap: 8px;
       }
       
       .canvas-wrapper {
-        flex: 0 0 calc(50% - 4px);
+        flex: 0 0 100%;
+        max-width: 100%;
       }
 
       header {
         flex-direction: column;
         align-items: center;
         gap: 12px;
+      }
+    }
+
+    .copyright-footer {
+      text-align: center;
+      color: var(--text-light);
+      font-size: 14px;
+      margin-top: 20px;
+      padding: 16px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 480px) {
+      .copyright-footer {
+        font-size: 12px;
+        padding: 12px 0;
       }
     }
   </style>
@@ -719,10 +749,10 @@
         <div class="control-group">
           <label for="outputSize">Output Size:</label>
           <select id="outputSize">
-            <option value="original">Original</option>
-            <option value="1080p">1080p</option>
-            <option value="720p">720p</option>
-            <option value="custom">Custom</option>
+            <option value="original">Original Resolution</option>
+            <option value="1080p">1080p (Full HD)</option>
+            <option value="720p">720p (HD)</option>
+            <option value="custom">Custom Size</option>
           </select>
         </div>
       </div>
@@ -879,6 +909,12 @@
       </div>
     </div>
   </div>
+
+  <!-- Add this just before the tutorial overlay -->
+  <footer class="copyright-footer">
+    &copy; 2025 Stereo Image Generator. All rights reserved.
+  </footer>
+</div> <!-- This is the closing div of app-container -->
 
   <!-- Tutorial Overlay -->
   <div class="tutorial-overlay" id="tutorialOverlay">
@@ -1184,21 +1220,24 @@
 
       // Initialize canvases with proper aspect ratio
       initCanvases() {
-        const portraitHeight = Math.min(window.innerHeight * 0.3, 300);
-        const portraitWidth = portraitHeight * 0.75;
+        // Set reasonable default sizes that work for both orientations
+        const defaultHeight = Math.min(window.innerHeight * 0.4, 400);
+        const defaultWidth = defaultHeight * 1.5;
         
         if (!this.state.leftImage) {
-          this.elements.leftCanvas.width = portraitWidth;
-          this.elements.leftCanvas.height = portraitHeight;
+          this.elements.leftCanvas.width = defaultWidth;
+          this.elements.leftCanvas.height = defaultHeight;
         }
         
         if (!this.state.rightImage) {
-          this.elements.rightCanvas.width = portraitWidth;
-          this.elements.rightCanvas.height = portraitHeight;
+          this.elements.rightCanvas.width = defaultWidth;
+          this.elements.rightCanvas.height = defaultHeight;
         }
         
-        this.elements.resultCanvas.style.setProperty('--result-aspect-ratio', '4/3');
+        // Result canvas will adapt to the generated content
+        this.elements.resultCanvas.style.setProperty('--result-aspect-ratio', 'auto');
         
+        // Restore any existing canvas data
         if (this.state.leftCanvasData) this.restoreCanvas(this.elements.leftCanvas, this.state.leftCanvasData);
         if (this.state.rightCanvasData) this.restoreCanvas(this.elements.rightCanvas, this.state.rightCanvasData);
         if (this.state.resultCanvasData) this.restoreCanvas(this.elements.resultCanvas, this.state.resultCanvasData);
@@ -1211,11 +1250,32 @@
         const img = new Image();
         img.onload = () => {
           const ctx = canvas.getContext('2d');
-          canvas.width = img.width;
-          canvas.height = img.height;
+          
+          // Calculate dimensions to maintain aspect ratio while fitting in container
+          const containerWidth = canvas.parentElement.clientWidth;
+          const maxHeight = window.innerHeight * 0.6;
+          
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > containerWidth) {
+            const ratio = containerWidth / width;
+            width = containerWidth;
+            height = height * ratio;
+          }
+          
+          if (height > maxHeight) {
+            const ratio = maxHeight / height;
+            height = maxHeight;
+            width = width * ratio;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.imageSmoothingEnabled = true;
-          ctx.drawImage(img, 0, 0);
+          ctx.drawImage(img, 0, 0, width, height);
           
           if (canvas.id === 'leftCanvas') {
             this.state.leftImage = img;
@@ -1243,12 +1303,31 @@
             const canvas = side === 'left' ? this.elements.leftCanvas : this.elements.rightCanvas;
             const ctx = side === 'left' ? this.contexts.leftCtx : this.contexts.rightCtx;
             
-            canvas.width = img.width;
-            canvas.height = img.height;
+            // Calculate dimensions to maintain aspect ratio while fitting in container
+            const containerWidth = canvas.parentElement.clientWidth;
+            const maxHeight = window.innerHeight * 0.6;
+            
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > containerWidth) {
+              const ratio = containerWidth / width;
+              width = containerWidth;
+              height = height * ratio;
+            }
+            
+            if (height > maxHeight) {
+              const ratio = maxHeight / height;
+              height = maxHeight;
+              width = width * ratio;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
             
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.imageSmoothingEnabled = true;
-            ctx.drawImage(img, 0, 0);
+            ctx.drawImage(img, 0, 0, width, height);
             
             const dataUrl = this.getCanvasDataUrl(canvas);
             if (side === 'left') {
@@ -1293,8 +1372,7 @@
             video: { 
               facingMode: facingMode,
               width: { ideal: 1920 },
-              height: { ideal: 1080 },
-              aspectRatio: { ideal: 4/3 }
+              height: { ideal: 1080 }
             }
           };
 
@@ -1308,7 +1386,7 @@
           this.elements.cameraPreview.style.display = 'block';
           this.elements.photoCaptureBtn.style.display = 'inline-block';
           this.elements.cameraSwitchBtn.style.display = 'inline-block';
-          this.elements.closeCameraBtn.style.display = 'inline-block';
+          this.elements.closeCameraBtn.style.display = 'none';
           this.elements.takePhotoBtn.style.display = 'none';
           this.state.currentStream = stream;
           this.elements.cameraStatus.textContent = `Camera active (${this.state.useFrontCamera ? 'Front' : 'Rear'})`;
@@ -1423,7 +1501,7 @@
         const canvas = this.state.currentCameraSide === 'left' ? this.elements.leftCanvas : this.elements.rightCanvas;
         const ctx = this.state.currentCameraSide === 'left' ? this.contexts.leftCtx : this.contexts.rightCtx;
         
-        this.capturePortraitImage(this.elements.cameraPreview, canvas, ctx, this.state.useFrontCamera);
+        this.captureImage(this.elements.cameraPreview, canvas, ctx, this.state.useFrontCamera);
         
         const dataUrl = this.getCanvasDataUrl(canvas);
         if (this.state.currentCameraSide === 'left') {
@@ -1446,8 +1524,8 @@
         this.updateUI();
       }
 
-      // Improved camera capture function
-      capturePortraitImage(video, canvas, ctx, isFrontCamera) {
+      // Improved camera capture function for both portrait and landscape
+      captureImage(video, canvas, ctx, isFrontCamera) {
         const videoWidth = video.videoWidth;
         const videoHeight = video.videoHeight;
         
@@ -1465,32 +1543,30 @@
           tempCtx.drawImage(video, 0, 0, videoWidth, videoHeight);
         }
         
-        const portraitWidth = Math.min(videoWidth, videoHeight);
-        const portraitHeight = Math.max(videoWidth, videoHeight);
+        // Calculate dimensions to maintain aspect ratio while fitting in container
+        const containerWidth = canvas.parentElement.clientWidth;
+        const maxHeight = window.innerHeight * 0.6;
         
-        canvas.width = portraitWidth;
-        canvas.height = portraitHeight;
+        let width = videoWidth;
+        let height = videoHeight;
+        
+        if (width > containerWidth) {
+          const ratio = containerWidth / width;
+          width = containerWidth;
+          height = height * ratio;
+        }
+        
+        if (height > maxHeight) {
+          const ratio = maxHeight / height;
+          height = maxHeight;
+          width = width * ratio;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.imageSmoothingEnabled = true;
-        
-        if (videoWidth > videoHeight) {
-          ctx.save();
-          ctx.translate(canvas.width / 2, canvas.height / 2);
-          ctx.rotate(Math.PI / 2);
-          ctx.drawImage(tempCanvas, -videoWidth / 2, -videoHeight / 2, videoWidth, videoHeight);
-          ctx.restore();
-        } else {
-          ctx.drawImage(tempCanvas, 
-            (videoWidth - portraitWidth) / 2, 
-            (videoHeight - portraitHeight) / 2,
-            portraitWidth, 
-            portraitHeight,
-            0, 
-            0,
-            portraitWidth,
-            portraitHeight
-          );
-        }
+        ctx.drawImage(tempCanvas, 0, 0, videoWidth, videoHeight, 0, 0, width, height);
       }
 
       // Stop camera
@@ -1594,14 +1670,24 @@
         
         setTimeout(() => {
           try {
-            this.elements.resultCanvas.style.setProperty('--result-aspect-ratio', '4/3');
+            this.elements.resultCanvas.style.setProperty('--result-aspect-ratio', 'auto');
 
             let outputWidth = this.state.leftImage.width + this.state.rightImage.width;
             let outputHeight = Math.max(this.state.leftImage.height, this.state.rightImage.height);
             
             const sizeOption = this.elements.outputSizeSelect.value;
-            if (sizeOption !== 'original') {
-              const targetHeight = sizeOption === '1080p' ? 1080 : 720;
+            if (sizeOption === 'custom') {
+              const targetHeight = 720;
+              const scale = targetHeight / outputHeight;
+              outputWidth = Math.round(outputWidth * scale);
+              outputHeight = targetHeight;
+            } else if (sizeOption === '1080p') {
+              const targetHeight = 1080;
+              const scale = targetHeight / outputHeight;
+              outputWidth = Math.round(outputWidth * scale);
+              outputHeight = targetHeight;
+            } else if (sizeOption === '720p') {
+              const targetHeight = 720;
               const scale = targetHeight / outputHeight;
               outputWidth = Math.round(outputWidth * scale);
               outputHeight = targetHeight;
@@ -1654,14 +1740,24 @@
         
         setTimeout(() => {
           try {
-            this.elements.resultCanvas.style.setProperty('--result-aspect-ratio', '4/3');
+            this.elements.resultCanvas.style.setProperty('--result-aspect-ratio', 'auto');
 
             let outputWidth = this.state.leftImage.width + this.state.rightImage.width;
             let outputHeight = Math.max(this.state.leftImage.height, this.state.rightImage.height);
             
             const sizeOption = this.elements.outputSizeSelect.value;
-            if (sizeOption !== 'original') {
-              const targetHeight = sizeOption === '1080p' ? 1080 : 720;
+            if (sizeOption === 'custom') {
+              const targetHeight = 720;
+              const scale = targetHeight / outputHeight;
+              outputWidth = Math.round(outputWidth * scale);
+              outputHeight = targetHeight;
+            } else if (sizeOption === '1080p') {
+              const targetHeight = 1080;
+              const scale = targetHeight / outputHeight;
+              outputWidth = Math.round(outputWidth * scale);
+              outputHeight = targetHeight;
+            } else if (sizeOption === '720p') {
+              const targetHeight = 720;
               const scale = targetHeight / outputHeight;
               outputWidth = Math.round(outputWidth * scale);
               outputHeight = targetHeight;
@@ -1718,14 +1814,24 @@
         
         setTimeout(() => {
           try {
-            this.elements.resultCanvas.style.setProperty('--result-aspect-ratio', '3/4');
+            this.elements.resultCanvas.style.setProperty('--result-aspect-ratio', 'auto');
 
             let width = Math.max(this.state.leftImage.width, this.state.rightImage.width);
             let height = Math.max(this.state.leftImage.height, this.state.rightImage.height);
             
             const sizeOption = this.elements.outputSizeSelect.value;
-            if (sizeOption !== 'original') {
-              const targetHeight = sizeOption === '1080p' ? 1440 : 960;
+            if (sizeOption === 'custom') {
+              const targetHeight = 720;
+              const scale = targetHeight / height;
+              width = Math.round(width * scale);
+              height = targetHeight;
+            } else if (sizeOption === '1080p') {
+              const targetHeight = 1080;
+              const scale = targetHeight / height;
+              width = Math.round(width * scale);
+              height = targetHeight;
+            } else if (sizeOption === '720p') {
+              const targetHeight = 720;
               const scale = targetHeight / height;
               width = Math.round(width * scale);
               height = targetHeight;
@@ -2115,4 +2221,4 @@
     });
   </script>
 </body>
-  </html>
+</html>
